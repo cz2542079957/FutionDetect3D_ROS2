@@ -1,9 +1,10 @@
 #include "lidarConfig.h"
 
-LidarConfig::LidarConfig(std::string _mode ) {
+LidarConfig::LidarConfig(std::string _mode) {
     driver = *createLidarDriver();
     channel = *createSerialPortChannel(port, baudrate);
-    mode = _mode;
+    modeName = _mode;
+    if (modeName == "DenseBoost") modeId = 1;
 }
 
 LidarConfig::~LidarConfig() {}
