@@ -28,7 +28,9 @@ class LidarConfig {
     //当前扫描模式
     LidarScanMode currentMode;
     //模式名称
-    std::string mode = "Standard";
+    std::string modeName = "Standard";
+    //模式id
+    int modeId = 0;
     //最远扫描距离 m
     float maxDistance = 30;
     //频率 hz
