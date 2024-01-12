@@ -16,6 +16,7 @@ LidarNode ::~LidarNode() {
 
 int LidarNode::work() {
     // lidar = new LidarConfig("DenseBoost");
+    // lidar = new LidarConfig("DenseBoost");
     lidar = new LidarConfig();
     sl_result res;
     //连接串口
