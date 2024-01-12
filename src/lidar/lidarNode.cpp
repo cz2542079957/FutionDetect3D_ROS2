@@ -1,11 +1,11 @@
 #include "lidarNode.h"
 
 LidarNode ::LidarNode() : Node("lidarNode") {
-    publisher = this->create_publisher<sensor_msgs::msg::LaserScan>("lidarScan", rclcpp::QoS(rclcpp::KeepLast(10)));
-    startServer =
-        this->create_service<std_srvs::srv::Empty>("StartLidarMotor", std::bind(&LidarNode::startMotor, this, std::placeholders::_1, std::placeholders::_2));
-    stopServer =
-        this->create_service<std_srvs::srv::Empty>("stopLidarMotor", std::bind(&LidarNode::stopMotor, this, std::placeholders::_1, std::placeholders::_2));
+    publisher = this->create_publisher<sensor_msgs::msg::LaserScan>(nodePrefix + "/lidarScan", rclcpp::QoS(rclcpp::KeepLast(10)));
+    startServer = this->create_service<std_srvs::srv::Empty>(nodePrefix + "/startLidarMotor",
+                                                             std::bind(&LidarNode::startMotor, this, std::placeholders::_1, std::placeholders::_2));
+    stopServer = this->create_service<std_srvs::srv::Empty>(nodePrefix + "/stopLidarMotor",
+                                                            std::bind(&LidarNode::stopMotor, this, std::placeholders::_1, std::placeholders::_2));
     RCLCPP_INFO(this->get_logger(), "雷达节点初始化完成");
 }
 
@@ -40,7 +40,7 @@ int LidarNode::work() {
     //雷达结束扫描时间
     rclcpp::Time endTime;
     double duration;
-    int c = 1;
+    int c = 100;
     while (c--) {
         size_t count = 8192;
         sl_lidar_response_measurement_node_hq_t nodes[count];

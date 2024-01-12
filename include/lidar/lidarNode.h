@@ -24,6 +24,7 @@ class LidarNode : public rclcpp::Node {
     //停止服务
     rclcpp::Service<std_srvs::srv::Empty>::SharedPtr stopServer;
 
+    std::string nodePrefix = "/lidarNode";
     //雷达配置属性
     LidarConfig* lidar;
     //是否修正数据
