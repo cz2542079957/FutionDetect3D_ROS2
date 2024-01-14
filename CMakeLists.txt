@@ -5,7 +5,16 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED) 
+find_package(std_msgs REQUIRED) 
+find_package(sensor_msgs REQUIRED) 
+find_package(std_srvs REQUIRED)   
 
+
+
+
+# 雷达sdk
 set(SLLIDAR_SDK_PATH "./lib/lidarSdk") 
 FILE(GLOB SLLIDAR_SDK_SRC 
   "${SLLIDAR_SDK_PATH}/src/arch/linux/*.cpp"
@@ -14,6 +23,7 @@ FILE(GLOB SLLIDAR_SDK_SRC
   "${SLLIDAR_SDK_PATH}/src/dataunpacker/*.cpp"
   "${SLLIDAR_SDK_PATH}/src/dataunpacker/unpacker/*.cpp"
 )
+# 串口包
 set(SERIAL_LIB_PATH "./lib/serial")
 FILE(GLOB SERIAL_LIB_SRC
   "${SERIAL_LIB_PATH}/src/*.cc" 
@@ -28,35 +38,42 @@ include_directories(
   ${Boost_INCLUDE_DIRS}
   ./src
   ./src/lidar
+  ./src/imu
   ./include
   ./include/lidar
+  ./include/imu
+)
+ 
+# 项目文件
+FILE(GLOB SOURCES
+  "./include/lidar/*.h"
+  "./include/imu/*.h"
+  "./include/*.h"
+  ./main.cpp
+  "./src/lidar.*.cpp"
+  "./src/imu/*.cpp"
+  "./src/*.cpp"
 )
 
-find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED) 
-find_package(std_msgs REQUIRED) 
-find_package(sensor_msgs REQUIRED) 
-find_package(std_srvs REQUIRED) 
-
- 
-set(SOURCES 
-  ./include/lidar/lidarNode.h
-  ./include/lidar/lidarConfig.h
-
-  ./main.cpp
-  ./src/lidar/lidarNode.cpp
-  ./src/lidar/lidarConfig.cpp
-) 
-
-add_executable(main ${SOURCES} ${SLLIDAR_SDK_SRC} ${SERIAL_LIB_SRC})
-
+add_executable(main ${SOURCES} ${SLLIDAR_SDK_SRC} ${SERIAL_LIB_SRC}) 
 ament_target_dependencies(
   main
   rclcpp
   std_msgs 
   sensor_msgs
-  std_srvs
+  std_srvs 
 )
+
+
+find_library(UDEV_LIBRARY NAMES udev)
+find_path(UDEV_INCLUDE_DIR NAMES libudev.h)
+
+if (UDEV_LIBRARY AND UDEV_INCLUDE_DIR)
+    include_directories(${UDEV_INCLUDE_DIR})
+    target_link_libraries(main ${UDEV_LIBRARY})
+else()
+    message(FATAL_ERROR "Failed to find libudev.")
+endif()
 
 install(TARGETS main DESTINATION lib/${PROJECT_NAME})
 target_compile_options(main PRIVATE "-w")  # 禁用警告

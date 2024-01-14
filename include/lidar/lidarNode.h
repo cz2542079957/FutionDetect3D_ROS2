@@ -13,7 +13,7 @@ class LidarNode : public rclcpp::Node {
    public:
     LidarNode();
     ~LidarNode();
-
+    //开始运行
     int work();
 
    private:
