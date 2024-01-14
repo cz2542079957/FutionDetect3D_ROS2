@@ -16,8 +16,8 @@ LidarNode ::~LidarNode() {
 
 int LidarNode::work() {
     // lidar = new LidarConfig("DenseBoost");
-    // lidar = new LidarConfig("DenseBoost");
-    lidar = new LidarConfig();
+    lidar = new LidarConfig("DenseBoost");
+    // lidar = new LidarConfig();
     sl_result res;
     //连接串口
     if (SL_IS_FAIL(lidar->driver->connect(lidar->channel))) {
@@ -180,7 +180,8 @@ void LidarNode::publish(rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPt
         }
     }
     for (size_t i = 0; i < _nodeCount; i++) {
-        printf("range: %4d, %10f\n", i, scan_msg->ranges[i]);
+        // printf("range: %4d, %10f\n", i, scan_msg->ranges[i]);
+        printf("range: %4d, %10f\n", i, scan_msg->intensities[i]);
     }
     pub->publish(*scan_msg);
 }

@@ -5,7 +5,8 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-set(SLLIDAR_SDK_PATH "./lib/sdk") 
+
+set(SLLIDAR_SDK_PATH "./lib/lidarSdk") 
 FILE(GLOB SLLIDAR_SDK_SRC 
   "${SLLIDAR_SDK_PATH}/src/arch/linux/*.cpp"
   "${SLLIDAR_SDK_PATH}/src/hal/*.cpp"
@@ -13,10 +14,17 @@ FILE(GLOB SLLIDAR_SDK_SRC
   "${SLLIDAR_SDK_PATH}/src/dataunpacker/*.cpp"
   "${SLLIDAR_SDK_PATH}/src/dataunpacker/unpacker/*.cpp"
 )
+set(SERIAL_LIB_PATH "./lib/serial")
+FILE(GLOB SERIAL_LIB_SRC
+  "${SERIAL_LIB_PATH}/src/*.cc" 
+  "${SERIAL_LIB_PATH}/src/list_ports/*.cc"
+)
 
 include_directories(
   ${SLLIDAR_SDK_PATH}/include 
   ${SLLIDAR_SDK_PATH}/src 
+  ${SERIAL_LIB_PATH}/include 
+  ${SERIAL_LIB_PATH}/src
   ${Boost_INCLUDE_DIRS}
   ./src
   ./src/lidar
@@ -40,7 +48,7 @@ set(SOURCES
   ./src/lidar/lidarConfig.cpp
 ) 
 
-add_executable(main ${SOURCES} ${SLLIDAR_SDK_SRC})
+add_executable(main ${SOURCES} ${SLLIDAR_SDK_SRC} ${SERIAL_LIB_SRC})
 
 ament_target_dependencies(
   main
