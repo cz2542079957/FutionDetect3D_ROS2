@@ -13,6 +13,7 @@ void TasksManager::run(std::vector<DeviceInfo> devices) {
         if (devices[i].deviceName == "惯导模块") {
             addImuTask(task);
         }
+        /* todo */
     }
     while (true) {
         /* code */
@@ -31,5 +32,4 @@ void TasksManager::addImuTask(Task &task) {
     auto imuNode = std::make_shared<ImuNode>();
     std::thread imuThread([&]() { imuNode->work(*this, task); });
     imuThread.detach();
-    RCLCPP_INFO(rclcpp::get_logger("DeviceManager"), "惯导模块线程[启动]");
 }

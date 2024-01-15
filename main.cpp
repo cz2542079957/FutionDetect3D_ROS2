@@ -13,12 +13,12 @@ TasksManager* tm;
 struct sigaction oldSa;
 void signal_handler(int signum) {
     if (signum == SIGINT) {
-        std::cout << "\nReceived Ctrl+C, cleaning up and exiting...\n";
+        //停止所有子线程
         tm->stop();
-
-        sleep(2);
+        delete dm, tm;
+        RCLCPP_INFO(rclcpp::get_logger("Main"), "结束");
+        rclcpp::shutdown();
         sigaction(SIGINT, &oldSa, NULL);
-
         exit(EXIT_SUCCESS);
     }
 }
@@ -39,13 +39,7 @@ int main(int argc, char* argv[]) {
     dm = new DeviceManager();
     dm->scanAvailableDevices();
     dm->matchDevices();
-    // dm->devices;
-    for (int i = 0; i < dm->devices.size(); i++) {
-        if (dm->devices[i].status != 1) continue;
-        if (dm->devices[i].deviceName == "激光雷达") {
-        } else if (dm->devices[i].deviceName == "惯导模块") {
-        }
-    }
+
     tm = new TasksManager();
     tm->run(dm->devices);
     // delete dm;
@@ -53,10 +47,6 @@ int main(int argc, char* argv[]) {
     // auto imuNode = std::make_shared<ImuNode>();
     // std::thread imuThread([&]() { imuNode->work(); });
     // imuThread.detach();
-
-    // while (true) {
-    //     /* code */
-    // }
 
     rclcpp::shutdown();
     return 0;
