@@ -36,7 +36,9 @@ void TasksManager::stop() {
 void TasksManager::addLidarTask(Task &task) {}
 
 void TasksManager::addImuTask(Task &task) {
-    auto imuNode = std::make_shared<ImuNode>();
-    std::thread imuThread([&]() { imuNode->work(*this, task); });
+    std::thread imuThread([&]() {
+        auto imuNode = std::make_shared<ImuNode>();
+        imuNode->work(*this, task);
+    });
     imuThread.detach();
 }

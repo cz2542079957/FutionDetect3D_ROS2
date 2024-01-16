@@ -28,5 +28,5 @@ class ImuNode : public rclcpp::Node {
 
     void rawDataHandler(std::vector<uint8_t> arr, int count);
 
-    void publish(std::vector<message::msg::ImuDataFrame>& data);
+    void publish(message::msg::ImuData::SharedPtr& imuData);
 };

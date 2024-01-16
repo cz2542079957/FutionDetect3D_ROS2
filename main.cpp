@@ -16,10 +16,10 @@ void signal_handler(int signum) {
     if (signum == SIGINT) {
         //停止所有子线程
         tm->stop();
-        delete dm, tm;
-        RCLCPP_INFO(rclcpp::get_logger("Main"), "结束");
         rclcpp::shutdown();
         sigaction(SIGINT, &oldSa, NULL);
+        delete dm, tm;
+        RCLCPP_INFO(rclcpp::get_logger("Main"), "结束");
         exit(EXIT_SUCCESS);
     }
 }

@@ -2,32 +2,36 @@
 
 #include "tasksManager.h"
 
-ImuNode ::ImuNode(/* args */) : Node("imuNode") {
+ImuNode ::ImuNode() : Node("imuNode") {
     publisher = this->create_publisher<message::msg::ImuData>(nodePrefix + "/imuData", rclcpp::QoS(rclcpp::KeepLast(10)));
+    // RCLCPP_INFO(rclcpp::get_logger("ImuNode"), " %u", publisher);
+    RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "惯导模块节点初始化完成");
 }
 
-ImuNode ::~ImuNode() {}
+ImuNode ::~ImuNode() { RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "惯导模块节点销毁"); }
 
 int ImuNode::work(TasksManager tm, Task& task) {
     // 115200
     RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "惯导模块线程[启动]");
     serial::Serial* serial = new serial::Serial(task.deviceInfo.node, baudRate);
     if (!serial->isOpen()) serial->open();
-    int milliseconds = 1000  / this->frequency;
+    int microseconds = 1000 * 1000 / this->frequency;
 
     while (task.running) {
         unsigned long count = serial->available();
         if (count <= 0) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+            std::this_thread::sleep_for(std::chrono::microseconds(microseconds));
         } else {
             //读取这些数据
             std::vector<uint8_t> arr;
             size_t realCount = serial->read(arr, count);
-            //处理原始数据
             // std::cout << "数量：" << realCount << std::endl;
             // for (int i = 0; i < realCount; i++) {
             //     printf("%02X ", static_cast<int>(arr[i]));
             // }
+            //脏数据
+            if (count != realCount) continue;
+            //处理原始数据
             rawDataHandler(arr, realCount);
         }
     }
@@ -81,6 +85,7 @@ void ImuNode::rawDataHandler(std::vector<uint8_t> arr, int count) {
                     dataFrame.acceleration.acceleration_x = ax;
                     dataFrame.acceleration.acceleration_y = ay;
                     dataFrame.acceleration.acceleration_z = az;
+                    dataFrame.temperature = temperature;
                     break;
                 }
                 case 0x52: {
@@ -103,8 +108,7 @@ void ImuNode::rawDataHandler(std::vector<uint8_t> arr, int count) {
                     dataFrame.angular.roll = roll;
                     dataFrame.angular.pitch = pitch;
                     dataFrame.angular.yaw = yaw;
-
-                    handledData->data.push_back(message::msg::ImuDataFrame());
+                    handledData->data.push_back(dataFrame);
                     break;
                 }
             }
@@ -113,8 +117,17 @@ void ImuNode::rawDataHandler(std::vector<uint8_t> arr, int count) {
         }
         break;
     }
-    publish(handledData->data);
+    // RCLCPP_INFO(rclcpp::get_logger("ImuNode"), " %u", publisher);
+    publish(handledData);
     rawDataBuffer.erase(rawDataBuffer.begin(), rawDataBuffer.begin() + i);
 }
 
-void ImuNode::publish(std::vector<message::msg::ImuDataFrame>& data) { RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "%d", data.size()); }
+void ImuNode::publish(message::msg::ImuData::SharedPtr& imuData) {
+    if (!publisher) {
+        // publisher被销毁
+        return;
+    }
+    // RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "%s", _publisher->get_topic_name());
+    // publisher->get_topic_name
+    publisher->publish(*imuData);
+}
