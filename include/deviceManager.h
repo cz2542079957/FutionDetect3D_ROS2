@@ -34,9 +34,9 @@ class DeviceManager : rclcpp::Node {
     // 设备列表
     std::vector<DeviceInfo> devices;
     //扫描可用设备
-    void scanAvailableDevices();
+    int scanAvailableDevices();
     //匹配设备
-    void matchDevices();
+    int matchDevices();
     std::vector<DeviceInfo> getDevices();
 
    private:

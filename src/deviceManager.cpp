@@ -5,11 +5,11 @@ DeviceManager::DeviceManager() : Node("diviceManagerNode") {}
 
 DeviceManager::~DeviceManager() {}
 
-void DeviceManager::scanAvailableDevices() {
+int DeviceManager::scanAvailableDevices() {
     struct udev* udev = udev_new();
     if (!udev) {
         RCLCPP_ERROR(rclcpp::get_logger("DeviceManager"), "创建udev上下文失败");
-        return;
+        return -1;
     }
     // 创建一个udev_enumerate对象，用来枚举指定类型的设备
     struct udev_enumerate* enumerate = udev_enumerate_new(udev);
@@ -37,22 +37,27 @@ void DeviceManager::scanAvailableDevices() {
     //清理
     udev_enumerate_unref(enumerate);
     udev_unref(udev);
+    return devices.size();
 }
 
-void DeviceManager::matchDevices() {
+int DeviceManager::matchDevices() {
+    int count = 0;
     for (int i = 0; i < devices.size(); i++) {
         if (devices[i].sn == lidarSerialNum) {
             devices[i].status = 1;
             devices[i].deviceName = "激光雷达";
             RCLCPP_INFO(rclcpp::get_logger("DeviceManager"), "成功匹配激光雷达：%s", devices[i].node.c_str());
+            count++;
         } else if (devices[i].sn == imuSerialNum) {
             devices[i].status = 1;
             devices[i].deviceName = "惯导模块";
             RCLCPP_INFO(rclcpp::get_logger("DeviceManager"), "成功匹配惯导模块：%s", devices[i].node.c_str());
+            count++;
         } else {
             devices[i].status = -1;
         }
     }
+    return count;
 }
 
 std::vector<DeviceInfo> DeviceManager::getDevices() { return this->devices; }

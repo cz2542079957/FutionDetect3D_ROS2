@@ -1,6 +1,8 @@
 #pragma once
+#include "message/msg/imu_data.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "serial.h"
+
 class TasksManager;
 struct Task;
 
@@ -19,5 +21,12 @@ class ImuNode : public rclcpp::Node {
     // buffer = 100;
     std::vector<uint8_t> rawDataBuffer;
 
+    //话题节点前缀
+    std::string nodePrefix = "/imuNode";
+    //发布者
+    rclcpp::Publisher<message::msg::ImuData>::SharedPtr publisher;
+
     void rawDataHandler(std::vector<uint8_t> arr, int count);
+
+    void publish(std::vector<message::msg::ImuDataFrame>& data);
 };

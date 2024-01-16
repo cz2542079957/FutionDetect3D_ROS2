@@ -16,14 +16,19 @@ struct Task {
 
 class TasksManager {
    public:
-    TasksManager(/* args */);
+    TasksManager();
     ~TasksManager();
-    // 开始主线程时间循环
+
+    // 主线程设备分配
+
+    // 开始主线程事件循环
     void run(std::vector<DeviceInfo> devices);
     //退出
     void stop();
 
    private:
+    // running
+    bool running = false;
     //当前任务 （指针）
     std::vector<Task *> tasks;
     pthread_mutex_t tasksMutex = PTHREAD_MUTEX_INITIALIZER;
