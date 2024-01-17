@@ -18,6 +18,8 @@ void TasksManager::run(std::vector<DeviceInfo> devices) {
         tasks.push_back(&task);
         if (devices[i].deviceName == "惯导模块") {
             addImuTask(task);
+        } else if (devices[i].deviceName == "激光雷达") {
+            addLidarTask(task);
         }
         /* todo */
     }
@@ -33,7 +35,13 @@ void TasksManager::stop() {
     running = false;
 }
 
-void TasksManager::addLidarTask(Task &task) {}
+void TasksManager::addLidarTask(Task &task) {
+    std::thread lidarThread([&]() {
+        auto lidarNode = std::make_shared<LidarNode>();
+        lidarNode->work(*this, task);
+    });
+    lidarThread.detach();
+}
 
 void TasksManager::addImuTask(Task &task) {
     std::thread imuThread([&]() {

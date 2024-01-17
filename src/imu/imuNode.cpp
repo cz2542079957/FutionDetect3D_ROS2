@@ -9,9 +9,7 @@ ImuNode ::ImuNode() : Node("imuNode") {
 }
 
 ImuNode ::~ImuNode() { RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "惯导模块节点销毁"); }
-
 int ImuNode::work(TasksManager tm, Task& task) {
-    // 115200
     RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "惯导模块线程[启动]");
     serial::Serial* serial = new serial::Serial(task.deviceInfo.node, baudRate);
     if (!serial->isOpen()) serial->open();
@@ -65,49 +63,37 @@ void ImuNode::rawDataHandler(std::vector<uint8_t> arr, int count) {
             switch (rawDataBuffer[i + 1]) {
                 case 0x50: {
                     //时间
-                    // printf("%u年%u月%u日%u时%u分%u秒%u毫秒\n", rawDataBuffer[i + 2], rawDataBuffer[i + 3], rawDataBuffer[i + 4], rawDataBuffer[i + 5],
-                    //        rawDataBuffer[i + 6], rawDataBuffer[i + 7], milliseconds);
-                    unsigned long long timestemp = (unsigned short)(((unsigned short)rawDataBuffer[9] << 8) | rawDataBuffer[8]) +
-                                                   (((rawDataBuffer[i + 4] /*日*/ * 24 + rawDataBuffer[i + 5] /*时*/) * 60 + rawDataBuffer[i + 6] /*分*/) * 60 +
-                                                    rawDataBuffer[i + 7] /*秒*/) *
-                                                       1000;
+                    dataFrame.timestemp = (unsigned short)(((unsigned short)rawDataBuffer[9] << 8) | rawDataBuffer[8]) +
+                                          (((rawDataBuffer[i + 4] /*日*/ * 24 + rawDataBuffer[i + 5] /*时*/) * 60 + rawDataBuffer[i + 6] /*分*/) * 60 +
+                                           rawDataBuffer[i + 7] /*秒*/) *
+                                              1000;
                     // printf("time :%u\n", timestemp);
-                    dataFrame.timestemp = timestemp;
                     break;
                 }
                 case 0x51: {
                     //加速度计
-                    double ax = (short)((short)(rawDataBuffer[i + 3] << 8) | rawDataBuffer[i + 2]) * accelerationCoe;
-                    double ay = (short)((short)(rawDataBuffer[i + 5] << 8) | rawDataBuffer[i + 4]) * accelerationCoe;
-                    double az = (short)((short)(rawDataBuffer[i + 7] << 8) | rawDataBuffer[i + 6]) * accelerationCoe;
-                    float temperature = ((rawDataBuffer[i + 9] << 8) | rawDataBuffer[i + 8]) / 100;
+                    dataFrame.acceleration.acceleration_x = (short)((short)(rawDataBuffer[i + 3] << 8) | rawDataBuffer[i + 2]) * accelerationCoe;
+                    dataFrame.acceleration.acceleration_y = (short)((short)(rawDataBuffer[i + 5] << 8) | rawDataBuffer[i + 4]) * accelerationCoe;
+                    dataFrame.acceleration.acceleration_z = (short)((short)(rawDataBuffer[i + 7] << 8) | rawDataBuffer[i + 6]) * accelerationCoe;
+                    dataFrame.temperature = ((rawDataBuffer[i + 9] << 8) | rawDataBuffer[i + 8]) / 100;
                     // printf("x:%lf y:%lf z:%lf ,  温度: %f \n", ax, ay, az, temperature);
-                    dataFrame.acceleration.acceleration_x = ax;
-                    dataFrame.acceleration.acceleration_y = ay;
-                    dataFrame.acceleration.acceleration_z = az;
-                    dataFrame.temperature = temperature;
                     break;
                 }
                 case 0x52: {
                     //角速度
-                    double wx = (short)((short)(rawDataBuffer[i + 3] << 8) | rawDataBuffer[i + 2]) * angularVelocityCoe;
-                    double wy = (short)((short)(rawDataBuffer[i + 5] << 8) | rawDataBuffer[i + 4]) * angularVelocityCoe;
-                    double wz = (short)((short)(rawDataBuffer[i + 7] << 8) | rawDataBuffer[i + 6]) * angularVelocityCoe;
+                    dataFrame.angular_velocity.angular_velocity_x = (short)((short)(rawDataBuffer[i + 3] << 8) | rawDataBuffer[i + 2]) * angularVelocityCoe;
+                    dataFrame.angular_velocity.angular_velocity_y = (short)((short)(rawDataBuffer[i + 5] << 8) | rawDataBuffer[i + 4]) * angularVelocityCoe;
+                    dataFrame.angular_velocity.angular_velocity_z = (short)((short)(rawDataBuffer[i + 7] << 8) | rawDataBuffer[i + 6]) * angularVelocityCoe;
                     // printf("角速度 x:%lf y:%lf z:%lf\n", wx, wy, wz);
-                    dataFrame.angular_velocity.angular_velocity_x = wx;
-                    dataFrame.angular_velocity.angular_velocity_y = wy;
-                    dataFrame.angular_velocity.angular_velocity_z = wz;
                     break;
                 }
                 case 0x53: {
                     //角度
-                    double roll = (short)((short)(rawDataBuffer[i + 3] << 8) | rawDataBuffer[i + 2]) * angularCoe;
-                    double pitch = (short)((short)(rawDataBuffer[i + 5] << 8) | rawDataBuffer[i + 4]) * angularCoe;
-                    double yaw = (short)((short)(rawDataBuffer[i + 7] << 8) | rawDataBuffer[i + 6]) * angularCoe;
+                    dataFrame.angular.roll = (short)((short)(rawDataBuffer[i + 3] << 8) | rawDataBuffer[i + 2]) * angularCoe;
+                    dataFrame.angular.pitch = (short)((short)(rawDataBuffer[i + 5] << 8) | rawDataBuffer[i + 4]) * angularCoe;
+                    dataFrame.angular.yaw = (short)((short)(rawDataBuffer[i + 7] << 8) | rawDataBuffer[i + 6]) * angularCoe;
                     // printf("角度 x:%lf y:%lf z:%lf\n", roll, pitch, yaw);
-                    dataFrame.angular.roll = roll;
-                    dataFrame.angular.pitch = pitch;
-                    dataFrame.angular.yaw = yaw;
+                    //帧最后一段，添加整个帧到待传送容器
                     handledData->data.push_back(dataFrame);
                     break;
                 }
@@ -127,7 +113,6 @@ void ImuNode::publish(message::msg::ImuData::SharedPtr& imuData) {
         // publisher被销毁
         return;
     }
-    // RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "%s", _publisher->get_topic_name());
-    // publisher->get_topic_name
+    //发布
     publisher->publish(*imuData);
 }

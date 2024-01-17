@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.8)
-project(fusionDetect3D)
+project(fusion_detect_3d)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-SET(CMAKE_BUILD_TYPE "Debug")
-SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
-SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall") 
+# SET(CMAKE_BUILD_TYPE "Debug")
+# SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
+# SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall") 
 
 
 find_package(ament_cmake REQUIRED)
@@ -15,7 +15,7 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED) 
 find_package(sensor_msgs REQUIRED) 
 find_package(std_srvs REQUIRED)     
-find_package(message REQUIRED)    
+find_package(message REQUIRED)
 # 查找udev
 find_library(UDEV_LIBRARY NAMES udev)
 find_path(UDEV_INCLUDE_DIR NAMES libudev.h) 
@@ -35,12 +35,7 @@ FILE(GLOB SERIAL_LIB_SRC
   "${SERIAL_LIB_PATH}/src/*.cc" 
   "${SERIAL_LIB_PATH}/src/list_ports/*.cc"
 )
-# 串口包
-set(MSG_LIB_PATH "./lib/message")
-FILE(GLOB MSG_LIB_SRC
-  "${MSG_LIB_PATH}/msg/*.hpp" 
-  "${MSG_LIB_PATH}/msg/detail/*.hpp"
-)
+
 
 include_directories(
   ${SLLIDAR_SDK_PATH}/include 
@@ -65,12 +60,13 @@ FILE(GLOB SOURCES
   "./include/imu/*.h"
   "./include/*.h"
   ./main.cpp
-  "./src/lidar.*.cpp"
+  "./src/lidar/*.cpp"
   "./src/imu/*.cpp"
   "./src/*.cpp"
 )
 
-add_executable(main ${SOURCES} ${SLLIDAR_SDK_SRC} ${SERIAL_LIB_SRC} ${MSG_LIB_SRC}) 
+
+add_executable(main ${SOURCES} ${SLLIDAR_SDK_SRC} ${SERIAL_LIB_SRC} ) 
 ament_target_dependencies(
   main
   rclcpp

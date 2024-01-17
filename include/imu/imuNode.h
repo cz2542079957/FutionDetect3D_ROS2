@@ -12,6 +12,7 @@ class ImuNode : public rclcpp::Node {
     ~ImuNode();
 
     int work(TasksManager tm, Task& task);
+    
 
    private:
     //波特率 230400 115200

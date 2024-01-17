@@ -6,6 +6,7 @@
 
 #include "deviceManager.h"
 #include "imuNode.h"
+#include "lidarNode.h"
 
 struct Task {
     //是否正在运行
