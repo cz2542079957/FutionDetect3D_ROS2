@@ -18,13 +18,11 @@ void signal_handler(int signum) {
         tm->stop();
         rclcpp::shutdown();
         sigaction(SIGINT, &oldSa, NULL);
-        delete dm, tm;
-        RCLCPP_INFO(rclcpp::get_logger("Main"), "结束");
-        exit(EXIT_SUCCESS);
     }
 }
 
 int main(int argc, char* argv[]) {
+    std::system("clear");
     struct sigaction sa;
     sa.sa_handler = signal_handler;
     sigemptyset(&sa.sa_mask);
@@ -51,13 +49,10 @@ int main(int argc, char* argv[]) {
 
     tm = new TasksManager();
     tm->run(dm->devices);
-    // delete dm;
 
-    // auto imuNode = std::make_shared<ImuNode>();
-    // std::thread imuThread([&]() { imuNode->work(); });
-    // imuThread.detach();
-
+    delete dm, tm;
     rclcpp::shutdown();
+    RCLCPP_INFO(rclcpp::get_logger("Main"), "结束");
     return 0;
 }
 
@@ -65,10 +60,10 @@ int main(int argc, char* argv[]) {
 
 
 
-    colcon build --packages-select fusionDetect3D
+    colcon build --packages-select fusion_detect_3d
 
     source install/setup.bash
 
-    ros2 run fusionDetect3D main
+    ros2 run fusion_detect_3d main
 
 */

@@ -9,8 +9,8 @@ ImuNode ::ImuNode() : Node("imuNode") {
 }
 
 ImuNode ::~ImuNode() { RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "惯导模块节点销毁"); }
+
 int ImuNode::work(TasksManager tm, Task& task) {
-    RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "惯导模块线程[启动]");
     serial::Serial* serial = new serial::Serial(task.deviceInfo.node, baudRate);
     if (!serial->isOpen()) serial->open();
     int microseconds = 1000 * 1000 / this->frequency;
@@ -33,7 +33,6 @@ int ImuNode::work(TasksManager tm, Task& task) {
             rawDataHandler(arr, realCount);
         }
     }
-    RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "惯导模块线程[退出]");
     return 0;
 }
 
@@ -63,10 +62,11 @@ void ImuNode::rawDataHandler(std::vector<uint8_t> arr, int count) {
             switch (rawDataBuffer[i + 1]) {
                 case 0x50: {
                     //时间
-                    dataFrame.timestemp = (unsigned short)(((unsigned short)rawDataBuffer[9] << 8) | rawDataBuffer[8]) +
-                                          (((rawDataBuffer[i + 4] /*日*/ * 24 + rawDataBuffer[i + 5] /*时*/) * 60 + rawDataBuffer[i + 6] /*分*/) * 60 +
-                                           rawDataBuffer[i + 7] /*秒*/) *
-                                              1000;
+                    // dataFrame.timestemp = (unsigned short)(((unsigned short)rawDataBuffer[9] << 8) | rawDataBuffer[8]) +
+                    //                       (((rawDataBuffer[i + 4] /*日*/ * 24 + rawDataBuffer[i + 5] /*时*/) * 60 + rawDataBuffer[i + 6] /*分*/) * 60 +
+                    //                        rawDataBuffer[i + 7] /*秒*/) *
+                    //                           1000;
+                    dataFrame.timestemp = this->now().nanoseconds();
                     // printf("time :%u\n", timestemp);
                     break;
                 }
@@ -92,7 +92,7 @@ void ImuNode::rawDataHandler(std::vector<uint8_t> arr, int count) {
                     dataFrame.angular.roll = (short)((short)(rawDataBuffer[i + 3] << 8) | rawDataBuffer[i + 2]) * angularCoe;
                     dataFrame.angular.pitch = (short)((short)(rawDataBuffer[i + 5] << 8) | rawDataBuffer[i + 4]) * angularCoe;
                     dataFrame.angular.yaw = (short)((short)(rawDataBuffer[i + 7] << 8) | rawDataBuffer[i + 6]) * angularCoe;
-                    // printf("角度 x:%lf y:%lf z:%lf\n", roll, pitch, yaw);
+                    // printf("角度 x:%lf y:%lf z:%lf\n", dataFrame.angular.roll, dataFrame.angular.pitch, dataFrame.angular.yaw);
                     //帧最后一段，添加整个帧到待传送容器
                     handledData->data.push_back(dataFrame);
                     break;

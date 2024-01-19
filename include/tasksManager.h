@@ -13,6 +13,8 @@ struct Task {
     bool running = false;
     //设备信息
     DeviceInfo deviceInfo;
+    //工作线程
+    std::thread workThread;
 };
 
 class TasksManager {
@@ -30,6 +32,8 @@ class TasksManager {
    private:
     // running
     bool running = false;
+    //当前线程
+
     //当前任务 （指针）
     std::vector<Task *> tasks;
     pthread_mutex_t tasksMutex = PTHREAD_MUTEX_INITIALIZER;
