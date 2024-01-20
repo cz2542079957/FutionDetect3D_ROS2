@@ -129,8 +129,7 @@ int LidarNode::work(TasksManager tm, Task& task) {
 */
 
 int LidarNode::work(TasksManager tm, Task& task) {
-    lidar = new LidarConfig("DenseBoost");
-    lidar->port = task.deviceInfo.node;
+    lidar = new LidarConfig(task.deviceInfo.node, "DenseBoost");
     sl_result res;
     //连接串口
     if (SL_IS_FAIL(lidar->driver->connect(lidar->channel))) {
@@ -193,6 +192,7 @@ int LidarNode::work(TasksManager tm, Task& task) {
         publish(lidarData);
     }
     lidar->driver->stop();
+    if (lidar->driver->isConnected()) lidar->driver->disconnect();
 }
 
 bool LidarNode::startMotor(const std::shared_ptr<std_srvs::srv::Empty::Request> req, std::shared_ptr<std_srvs::srv::Empty::Response> res) { return false; }
@@ -203,10 +203,6 @@ void LidarNode::publish(message::msg::LidarData::SharedPtr& lidarData) {
     if (!publisher) {
         return;
     }
-    // RCLCPP_INFO_STREAM(this->get_logger(), lidarData->data.size());
-    // for (size_t i = 0; i < lidarData->data.size(); i++) {
-    //     // RCLCPP_INFO_STREAM(this->get_logger(), lidarData->data[i].timestemp);
-    // }
     publisher->publish(*lidarData);
 }
 

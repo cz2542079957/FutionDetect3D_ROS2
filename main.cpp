@@ -16,7 +16,6 @@ void signal_handler(int signum) {
     if (signum == SIGINT) {
         //停止所有子线程
         tm->stop();
-        rclcpp::shutdown();
         sigaction(SIGINT, &oldSa, NULL);
     }
 }

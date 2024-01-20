@@ -7,7 +7,7 @@ using namespace sl;
 
 class LidarConfig {
    public:
-    LidarConfig(std::string _mode = "Standard");
+    LidarConfig(std::string _port , std::string _mode = "Standard");
     ~LidarConfig();
 
     //雷达驱动
