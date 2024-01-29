@@ -41,7 +41,7 @@ void ImuNode::rawDataHandler(std::vector<uint8_t> arr, int count) {
     if (rawDataBuffer.size() < 11) return;
     //找到开头节点
     int i = 0;
-    while (!((rawDataBuffer[i] == 0x55) && (rawDataBuffer[i + 1] == 0x50))) i++;
+    while (!((rawDataBuffer[i] == 0x55) && (rawDataBuffer[i + 1] == 0x52))) i++;
     //删除前面的无效段
     rawDataBuffer.erase(rawDataBuffer.begin(), rawDataBuffer.begin() + i);
     // i要回归0
@@ -60,41 +60,64 @@ void ImuNode::rawDataHandler(std::vector<uint8_t> arr, int count) {
         if (rawDataBuffer[i] == 0x55) {
             // printf("%d : %d\n", i, rawDataBuffer[i]);
             switch (rawDataBuffer[i + 1]) {
-                case 0x50: {
-                    //时间
-                    // dataFrame.timestemp = (unsigned short)(((unsigned short)rawDataBuffer[9] << 8) | rawDataBuffer[8]) +
-                    //                       (((rawDataBuffer[i + 4] /*日*/ * 24 + rawDataBuffer[i + 5] /*时*/) * 60 + rawDataBuffer[i + 6] /*分*/) * 60 +
-                    //                        rawDataBuffer[i + 7] /*秒*/) *
-                    //                           1000;
-                    dataFrame.timestemp = this->now().nanoseconds();
-                    // printf("time :%u\n", timestemp);
-                    break;
-                }
-                case 0x51: {
-                    //加速度计
-                    dataFrame.acceleration.acceleration_x = (short)((short)(rawDataBuffer[i + 3] << 8) | rawDataBuffer[i + 2]) * accelerationCoe;
-                    dataFrame.acceleration.acceleration_y = (short)((short)(rawDataBuffer[i + 5] << 8) | rawDataBuffer[i + 4]) * accelerationCoe;
-                    dataFrame.acceleration.acceleration_z = (short)((short)(rawDataBuffer[i + 7] << 8) | rawDataBuffer[i + 6]) * accelerationCoe;
-                    dataFrame.temperature = ((rawDataBuffer[i + 9] << 8) | rawDataBuffer[i + 8]) / 100;
-                    // printf("x:%lf y:%lf z:%lf ,  温度: %f \n", ax, ay, az, temperature);
-                    break;
-                }
+                // case 0x50: {
+                //     //时间
+                //     // dataFrame.timestemp = (unsigned short)(((unsigned short)rawDataBuffer[9] << 8) | rawDataBuffer[8]) +
+                //     //                       (((rawDataBuffer[i + 4] /*日*/ * 24 + rawDataBuffer[i + 5] /*时*/) * 60 + rawDataBuffer[i + 6] /*分*/) * 60 +
+                //     //                        rawDataBuffer[i + 7] /*秒*/) *
+                //     //                           1000;
+                //     dataFrame.timestemp = this->now().nanoseconds();
+                //     // printf("time :%u\n", timestemp);
+                //     break;
+                // }
+                // case 0x51: {
+                //     //加速度计
+                //     dataFrame.acceleration.acceleration_x = (short)((short)(rawDataBuffer[i + 3] << 8) | rawDataBuffer[i + 2]) * accelerationCoe;
+                //     dataFrame.acceleration.acceleration_y = (short)((short)(rawDataBuffer[i + 5] << 8) | rawDataBuffer[i + 4]) * accelerationCoe;
+                //     dataFrame.acceleration.acceleration_z = (short)((short)(rawDataBuffer[i + 7] << 8) | rawDataBuffer[i + 6]) * accelerationCoe;
+                //     dataFrame.temperature = ((rawDataBuffer[i + 9] << 8) | rawDataBuffer[i + 8]) / 100;
+                //     // printf("x:%lf y:%lf z:%lf ,  温度: %f \n", ax, ay, az, temperature);
+                //     break;
+                // }
                 case 0x52: {
                     //角速度
+                    dataFrame.timestemp = this->now().nanoseconds();
                     dataFrame.angular_velocity.angular_velocity_x = (short)((short)(rawDataBuffer[i + 3] << 8) | rawDataBuffer[i + 2]) * angularVelocityCoe;
                     dataFrame.angular_velocity.angular_velocity_y = (short)((short)(rawDataBuffer[i + 5] << 8) | rawDataBuffer[i + 4]) * angularVelocityCoe;
                     dataFrame.angular_velocity.angular_velocity_z = (short)((short)(rawDataBuffer[i + 7] << 8) | rawDataBuffer[i + 6]) * angularVelocityCoe;
                     // printf("角速度 x:%lf y:%lf z:%lf\n", wx, wy, wz);
                     break;
                 }
-                case 0x53: {
-                    //角度
-                    dataFrame.angular.roll = (short)((short)(rawDataBuffer[i + 3] << 8) | rawDataBuffer[i + 2]) * angularCoe;
-                    dataFrame.angular.pitch = (short)((short)(rawDataBuffer[i + 5] << 8) | rawDataBuffer[i + 4]) * angularCoe;
-                    dataFrame.angular.yaw = (short)((short)(rawDataBuffer[i + 7] << 8) | rawDataBuffer[i + 6]) * angularCoe;
-                    // printf("角度 x:%lf y:%lf z:%lf\n", dataFrame.angular.roll, dataFrame.angular.pitch, dataFrame.angular.yaw);
+                // case 0x53: {
+                //     //角度
+                //     dataFrame.angular.roll = (short)((short)(rawDataBuffer[i + 3] << 8) | rawDataBuffer[i + 2]) * angularCoe;
+                //     dataFrame.angular.pitch = (short)((short)(rawDataBuffer[i + 5] << 8) | rawDataBuffer[i + 4]) * angularCoe;
+                //     dataFrame.angular.yaw = (short)((short)(rawDataBuffer[i + 7] << 8) | rawDataBuffer[i + 6]) * angularCoe;
+                //     // printf("角度 x:%lf y:%lf z:%lf\n", dataFrame.angular.roll, dataFrame.angular.pitch, dataFrame.angular.yaw);
+                //     //帧最后一段，添加整个帧到待传送容器
+                //     handledData->data.push_back(dataFrame);
+                //     break;
+                // }
+                case 0x54: {
+                    //磁场
+                    dataFrame.magnetic_field.magnetic_field_x = ((short)(rawDataBuffer[i + 3] << 8) | rawDataBuffer[i + 2]);
+                    dataFrame.magnetic_field.magnetic_field_y = ((short)(rawDataBuffer[i + 5] << 8) | rawDataBuffer[i + 4]);
+                    dataFrame.magnetic_field.magnetic_field_z = ((short)(rawDataBuffer[i + 7] << 8) | rawDataBuffer[i + 6]);
+                    dataFrame.temperature = ((rawDataBuffer[i + 9] << 8) | rawDataBuffer[i + 8]) / 100;
+                    // printf("磁场 x:%lf y:%lf z:%lf\n", dataFrame.magnetic_field.magnetic_field_x, dataFrame.magnetic_field.magnetic_field_y,
+                    //        dataFrame.magnetic_field.magnetic_field_z);
+                    break;
+                }
+                case 0x59: {
+                    //四元数
+                    dataFrame.quaternion.quaternion_0 = (short)((short)(rawDataBuffer[i + 3] << 8) | rawDataBuffer[i + 2]) / 32768.0f;
+                    dataFrame.quaternion.quaternion_1 = (short)((short)(rawDataBuffer[i + 5] << 8) | rawDataBuffer[i + 4]) / 32768.0f;
+                    dataFrame.quaternion.quaternion_2 = (short)((short)(rawDataBuffer[i + 7] << 8) | rawDataBuffer[i + 6]) / 32768.0f;
+                    dataFrame.quaternion.quaternion_3 = (short)((short)(rawDataBuffer[i + 9] << 8) | rawDataBuffer[i + 8]) / 32768.0f;
                     //帧最后一段，添加整个帧到待传送容器
                     handledData->data.push_back(dataFrame);
+                    // printf("四元数 q0:%lf q1:%lf q2:%lf q3:%lf\n", dataFrame.quaternion.quaternion_0, dataFrame.quaternion.quaternion_1,
+                    //        dataFrame.quaternion.quaternion_2, dataFrame.quaternion.quaternion_3);
                     break;
                 }
             }

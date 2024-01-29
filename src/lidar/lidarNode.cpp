@@ -161,7 +161,6 @@ int LidarNode::work(TasksManager tm, Task& task) {
     while (task.running) {
         size_t count = 8192;
         sl_lidar_response_measurement_node_hq_t nodes[count];
-
         startTime = this->now();
         res = lidar->driver->grabScanDataHq(nodes, count);
         endTime = this->now();
