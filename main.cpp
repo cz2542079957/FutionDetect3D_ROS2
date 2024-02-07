@@ -29,27 +29,48 @@ int main(int argc, char* argv[]) {
     sigaction(SIGINT, &sa, &oldSa);
 
     rclcpp::init(argc, argv);
-    // auto sllidar_node = std::make_shared<LidarNode>();
-    //多线程实现
-    // std::thread thread_a([&]() { ret = sllidar_node->work(); });
-    // thread_a.join();
 
-    dm = new DeviceManager();
-    int availableDevicesNum = 0;
-    int matchDevicesNum = 0;
-    while (matchDevicesNum == 0) {
-        availableDevicesNum = dm->scanAvailableDevices();
-        matchDevicesNum = dm->matchDevices();
-        if (matchDevicesNum == 0) {
-            RCLCPP_INFO(rclcpp::get_logger("Main"), "正在等待设备接入...");
-            std::this_thread::sleep_for(std::chrono::milliseconds(HERARTBEAT_INTERVAL));
-        }
+    serial::Serial* serial = new serial::Serial("/dev/rosmaster", 115200);
+    if (!serial->isOpen()) {
+        serial->open();
     }
+    // int i = 100;
 
-    tm = new TasksManager();
-    tm->run(dm->devices);
+    // while (i--) {
+    //     unsigned long count = serial->available();
+    //     if (count == 0)
+    //         std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    //     else {
+    //         //读取这些数据
+    //         std::vector<uint8_t> arr;
+    //         size_t realCount = serial->read(arr, count);
+    //         // std::cout << "数量：" << realCount << std::endl;
+    //         for (int i = 0; i < realCount; i++) {
+    //             printf("%02X ", static_cast<int>(arr[i]));
+    //         }
+    //     }
+    // }
+    int check = (0x05 + 0x02 + 0x01 + 0x02) % 256;
+    char* send = new char[7]{0xff, 0xfc, 0x05, 0x02, 0x01, 0x02, check};
 
-    delete dm, tm;
+    serial->write(send);
+
+    // dm = new DeviceManager();
+    // int availableDevicesNum = 0;
+    // int matchDevicesNum = 0;
+    // while (matchDevicesNum == 0) {
+    //     availableDevicesNum = dm->scanAvailableDevices();
+    //     matchDevicesNum = dm->matchDevices();
+    //     if (matchDevicesNum == 0) {
+    //         RCLCPP_INFO(rclcpp::get_logger("Main"), "正在等待设备接入...");
+    //         std::this_thread::sleep_for(std::chrono::milliseconds(HERARTBEAT_INTERVAL));
+    //     }
+    // }
+
+    // tm = new TasksManager();
+    // tm->run(dm->devices);
+
+    // delete dm, tm;
     rclcpp::shutdown();
     RCLCPP_INFO(rclcpp::get_logger("Main"), "结束");
     return 0;
