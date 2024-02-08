@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 
+#include "carMasterNode.h"
 #include "deviceManager.h"
 #include "imuNode.h"
 #include "lidarNode.h"
@@ -42,4 +43,5 @@ class TasksManager {
 
     void addLidarTask(Task &task);
     void addImuTask(Task &task);
+    void addRosMasterTask(Task &task);
 };

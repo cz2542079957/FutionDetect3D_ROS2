@@ -48,20 +48,24 @@ include_directories(
   ./src
   ./src/lidar
   ./src/imu
+  ./src/car
   ./lib
   ./include
   ./include/lidar
   ./include/imu
+  ./include/car
 )
  
 # 项目文件
 FILE(GLOB SOURCES
   "./include/lidar/*.h"
   "./include/imu/*.h"
+  "./include/car/*.h"
   "./include/*.h"
   ./main.cpp
   "./src/lidar/*.cpp"
   "./src/imu/*.cpp"
+  "./src/car/*.cpp"
   "./src/*.cpp"
 )
 
