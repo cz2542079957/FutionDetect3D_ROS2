@@ -11,39 +11,38 @@
 #include "rclcpp/rclcpp.hpp"
 #include "utils.h"
 
-//需要的设备
+// 设备ID
+enum DeviceID {
+    DIVECE_ID_CARMASTER,
+    DIVECE_ID_LIDAR,
+    DIVECE_ID_IMU,
+    DIVECE_COUNT,
+    DIVECE_ID_UNKNOW,
+};
+
+extern std::map<DeviceID, std::string> deviceNodes;  // 设备节点映射表
+extern std::map<DeviceID, std::string> deviceNames;  // 设备名称映射表
+extern std::map<DeviceID, int> deviceBaudRates;     // 设备串口波特率映射表
+
+// 需要的设备
 struct DeviceNeed {
-    //端口名称
-    std::string node;
-    //设备名称
-    std::string name;
-    //是否强制需要
+    DeviceID id = DIVECE_ID_UNKNOW;
+    // 是否强制需要
     bool required;
-    //是否当前有效
+    // 是否当前有效
     bool available = false;
 };
 
-//设备信息
-// struct DeviceInfo {
-//     //设备节点名称
-//     std::string node;
-//     //设备sn码
-//     std::string sn;
-//     //设备厂商号
-//     std::string vid;
-//     //设备产品号
-//     std::string pid;
-//     //设备名称
-//     std::string deviceName = "Unknow";
-//     //设备状态 -1未识别 0断开 1正常
-//     int status = 0;
-// };
+// 设备信息(对外传参使用)
 struct DeviceInfo {
-    //设备节点名称
-    std::string node;
-    //设备名称
-    std::string deviceName = "Unknow";
-    //设备状态 -1未识别 0断开 1正常
+    DeviceID id;
+    // 设备节点名称
+    std::string node = "/dev";
+    // 设备名称
+    std::string name = "未知设备";
+    // 设备波特率
+    int baudRate = 0;
+    // 设备状态 -1未识别 0断开 1正常
     int status = -1;
 };
 
@@ -52,24 +51,18 @@ class DeviceManager : rclcpp::Node {
     DeviceManager();
     ~DeviceManager();
 
-    //匹配设备
+    // 匹配设备
     int matchDevices();
 
     std::vector<DeviceInfo>& getDevices() { return this->devices; };
 
    private:
+    // 需要的设备列表
+    std::vector<DeviceNeed> devicesNeed = {{DIVECE_ID_CARMASTER, false}, {DIVECE_ID_LIDAR, false}, {DIVECE_ID_IMU, false}};
     // 设备列表
     std::vector<DeviceInfo> devices;
-    //需要的设备列表
-    std::vector<DeviceNeed> devicesNeed = {{"/dev/rosmaster", "ros扩展板", true}, {"/dev/rplidar", "激光雷达", false}, {"/dev/imu", "imu模块", false}};
-    //扫描可用设备
+    // 扫描可用设备
     int scanAvailableDevices();
-    //检查
+    // 检查
     int checkFailedDevices();
-
-    // 在本项目中 暂时写死
-    // std::string lidarSerialNum = "0aebf2bc3113ec119ec8f0ef7a109228";
-    // std::string imuSerialNum = "0001";
-    //获取sn号
-    // std::string getSerialNumber(struct udev_device* dev);
 };

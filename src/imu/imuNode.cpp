@@ -4,58 +4,61 @@
 
 ImuNode ::ImuNode() : Node("imuNode") {
     publisher = this->create_publisher<message::msg::ImuData>(nodePrefix + "/imuData", rclcpp::QoS(rclcpp::KeepLast(10)));
-    // RCLCPP_INFO(rclcpp::get_logger("ImuNode"), " %u", publisher);
     RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "惯导模块节点初始化完成");
 }
 
-ImuNode ::~ImuNode() { RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "惯导模块节点销毁"); }
+ImuNode ::~ImuNode() {
+    delete serial;
+    RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "惯导模块节点销毁");
+}
 
 int ImuNode::work(TasksManager tm, Task& task) {
-    serial::Serial* serial = new serial::Serial(task.deviceInfo.node, baudRate);
+    serial = new serial::Serial(task.deviceInfo.node, task.deviceInfo.baudRate);
     if (!serial->isOpen()) serial->open();
     int microseconds = 1000 * 1000 / this->frequency;
-
+    RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "惯导模块节点开始运行");
     while (task.running) {
         unsigned long count = serial->available();
         if (count <= 0) {
             std::this_thread::sleep_for(std::chrono::microseconds(microseconds));
         } else {
-            //读取这些数据
+            // 读取这些数据
             std::vector<uint8_t> arr;
             size_t realCount = serial->read(arr, count);
             // std::cout << "数量：" << realCount << std::endl;
             // for (int i = 0; i < realCount; i++) {
             //     printf("%02X ", static_cast<int>(arr[i]));
             // }
-            //脏数据
+            // 脏数据
             if (count != realCount) continue;
-            //处理原始数据
+            // 处理原始数据
             rawDataHandler(arr, realCount);
         }
     }
+    RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "惯导模块节点终止运行");
     return 0;
 }
 
 void ImuNode::rawDataHandler(std::vector<uint8_t> arr, int count) {
     rawDataBuffer.insert(rawDataBuffer.end(), arr.begin(), arr.end());
     if (rawDataBuffer.size() < 11) return;
-    //找到开头节点
+    // 找到开头节点
     int i = 0;
     while (!((rawDataBuffer[i] == 0x55) && (rawDataBuffer[i + 1] == 0x52))) i++;
-    //删除前面的无效段
+    // 删除前面的无效段
     rawDataBuffer.erase(rawDataBuffer.begin(), rawDataBuffer.begin() + i);
     // i要回归0
     i = 0;
-    //加速度系数
+    // 加速度系数
     double accelerationCoe = 156.8 / 32768;
-    //角速度系数
+    // 角速度系数
     double angularVelocityCoe = 2000.0 / 32768;
-    //角度系数
+    // 角度系数
     double angularCoe = 180.0 / 32768;
-    //已处理数据
+    // 已处理数据
     auto handledData = std::make_shared<message::msg::ImuData>();
     auto dataFrame = message::msg::ImuDataFrame();
-    //如果后面段长小于最小帧则跳过
+    // 如果后面段长小于最小帧则跳过
     while (i < rawDataBuffer.size() && rawDataBuffer.size() - i >= 11) {
         if (rawDataBuffer[i] == 0x55) {
             // printf("%d : %d\n", i, rawDataBuffer[i]);
@@ -80,7 +83,7 @@ void ImuNode::rawDataHandler(std::vector<uint8_t> arr, int count) {
                 //     break;
                 // }
                 case 0x52: {
-                    //角速度
+                    // 角速度
                     dataFrame.timestemp = this->now().nanoseconds();
                     dataFrame.angular_velocity.angular_velocity_x = (short)((short)(rawDataBuffer[i + 3] << 8) | rawDataBuffer[i + 2]) * angularVelocityCoe;
                     dataFrame.angular_velocity.angular_velocity_y = (short)((short)(rawDataBuffer[i + 5] << 8) | rawDataBuffer[i + 4]) * angularVelocityCoe;
@@ -99,7 +102,7 @@ void ImuNode::rawDataHandler(std::vector<uint8_t> arr, int count) {
                 //     break;
                 // }
                 case 0x54: {
-                    //磁场
+                    // 磁场
                     dataFrame.magnetic_field.magnetic_field_x = ((short)(rawDataBuffer[i + 3] << 8) | rawDataBuffer[i + 2]);
                     dataFrame.magnetic_field.magnetic_field_y = ((short)(rawDataBuffer[i + 5] << 8) | rawDataBuffer[i + 4]);
                     dataFrame.magnetic_field.magnetic_field_z = ((short)(rawDataBuffer[i + 7] << 8) | rawDataBuffer[i + 6]);
@@ -109,12 +112,12 @@ void ImuNode::rawDataHandler(std::vector<uint8_t> arr, int count) {
                     break;
                 }
                 case 0x59: {
-                    //四元数
+                    // 四元数
                     dataFrame.quaternion.quaternion_0 = (short)((short)(rawDataBuffer[i + 3] << 8) | rawDataBuffer[i + 2]) / 32768.0f;
                     dataFrame.quaternion.quaternion_1 = (short)((short)(rawDataBuffer[i + 5] << 8) | rawDataBuffer[i + 4]) / 32768.0f;
                     dataFrame.quaternion.quaternion_2 = (short)((short)(rawDataBuffer[i + 7] << 8) | rawDataBuffer[i + 6]) / 32768.0f;
                     dataFrame.quaternion.quaternion_3 = (short)((short)(rawDataBuffer[i + 9] << 8) | rawDataBuffer[i + 8]) / 32768.0f;
-                    //帧最后一段，添加整个帧到待传送容器
+                    // 帧最后一段，添加整个帧到待传送容器
                     handledData->data.push_back(dataFrame);
                     // printf("四元数 q0:%lf q1:%lf q2:%lf q3:%lf\n", dataFrame.quaternion.quaternion_0, dataFrame.quaternion.quaternion_1,
                     //        dataFrame.quaternion.quaternion_2, dataFrame.quaternion.quaternion_3);
@@ -136,6 +139,6 @@ void ImuNode::publish(message::msg::ImuData::SharedPtr& imuData) {
         // publisher被销毁
         return;
     }
-    //发布
+    // 发布
     publisher->publish(*imuData);
 }

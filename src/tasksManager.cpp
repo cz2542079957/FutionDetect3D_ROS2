@@ -7,7 +7,7 @@ TasksManager::~TasksManager() {}
 
 void TasksManager::run(std::vector<DeviceInfo> devices) {
     if (devices.size() == 0) {
-        RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "任务管理器[未启动]：当前没有有效设备，无法启动");
+        RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "任务管理器[未启动]：当前没有有效设备");
         return;
     }
     running = true;
@@ -18,11 +18,11 @@ void TasksManager::run(std::vector<DeviceInfo> devices) {
         task->running = true;
         task->deviceInfo = devices[i];
         tasks.push_back(task);
-        if (devices[i].deviceName == "imu模块") {
+        if (devices[i].id == DIVECE_ID_IMU) {
             addImuTask(*task);
-        } else if (devices[i].deviceName == "激光雷达") {
+        } else if (devices[i].id == DIVECE_ID_LIDAR) {
             addLidarTask(*task);
-        } else if (devices[i].deviceName == "ros扩展板") {
+        } else if (devices[i].id == DIVECE_ID_CARMASTER) {
             addRosMasterTask(*task);
         }
         /* todo */
@@ -38,11 +38,11 @@ void TasksManager::stop() {
         tasks[i]->running = false;
         try {
             if (tasks[i]->workThread.joinable()) {
-                RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "正在等待“%s”工作线程退出", tasks[i]->deviceInfo.deviceName.c_str());
+                RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "正在等待“%s”工作线程退出", tasks[i]->deviceInfo.name.c_str());
                 tasks[i]->workThread.join();
             }
         } catch (const std::system_error &e) {
-            RCLCPP_ERROR(rclcpp::get_logger("TaskManager"), "在Join %s 线程时发生错误: %s", tasks[i]->deviceInfo.deviceName, e.what());
+            RCLCPP_ERROR(rclcpp::get_logger("TaskManager"), "在Join %s 线程时发生错误: %s", tasks[i]->deviceInfo.name, e.what());
         }
     }
     running = false;
