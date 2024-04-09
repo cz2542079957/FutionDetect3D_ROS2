@@ -50,29 +50,29 @@ void TasksManager::stop() {
 
 void TasksManager::addLidarTask(Task &task) {
     task.workThread = std::thread([&]() {
-        RCLCPP_INFO(rclcpp::get_logger("LidarNode"), "激光雷达线程[启动]");
+        RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "激光雷达线程[启动]");
         auto lidarNode = std::make_shared<LidarNode>();
         lidarNode->work(*this, task);
-        RCLCPP_INFO(rclcpp::get_logger("LidarNode"), "激光雷达线程[退出]");
+        RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "激光雷达线程[退出]");
     });
     // task.workThread.detach();
 }
 
 void TasksManager::addImuTask(Task &task) {
     task.workThread = std::thread([&]() {
-        RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "imu模块线程[启动]");
+        RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "imu模块线程[启动]");
         auto imuNode = std::make_shared<ImuNode>();
         imuNode->work(*this, task);
-        RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "imu模块线程[退出]");
+        RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "imu模块线程[退出]");
     });
     // task.workThread.detach();
 }
 
 void TasksManager::addRosMasterTask(Task &task) {
     task.workThread = std::thread([&]() {
-        RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "ros扩展板线程[启动]");
+        RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "小车控制板线程[启动]");
         auto carMasterNode = std::make_shared<CarMasterNode>();
         carMasterNode->work(*this, task);
-        RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "ros扩展板线程[退出]");
+        RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "小车控制板线程[退出]");
     });
 }
