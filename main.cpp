@@ -2,7 +2,7 @@
  * @Author: cz2542079957 2542079957@qq.com
  * @Date: 2024-01-10 11:54:17
  * @LastEditors: cz2542079957 2542079957@qq.com
- * @LastEditTime: 2024-03-26 09:39:07
+ * @LastEditTime: 2024-04-14 11:37:02
  * @FilePath: /fusion_detect_3d/main.cpp
  * @Description: fusion detect 3d 项目中部署于[主控开发板]的子项目
  *
@@ -37,14 +37,8 @@ int main(int argc, char* argv[]) {
     sa.sa_flags = 0;
     sigaction(SIGINT, &sa, &oldSa);
 
+    RCLCPP_INFO(rclcpp::get_logger("Main"), "开始");
     rclcpp::init(argc, argv);
-
-    // serial::Serial* serial = new serial::Serial("/dev/rosmaster", 115200);
-    // if (!serial->isOpen()) {
-    //     serial->open();
-    // }
-    // int check = (0x05 + 0x02 + 0x01 + 0x02) % 256;
-    // char* send = new char[7]{0xff, 0xfc, 0x05, 0x02, 0x01, 0x02, check};
 
     deviceManager = new DeviceManager();
     deviceManager->matchDevices();
@@ -57,13 +51,13 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-/*
-
-
+/* 
 
     colcon build --packages-select fusion_detect_3d
 
     source install/setup.bash
+
+    export ROS_DOMAIN_ID=1
 
     ros2 run fusion_detect_3d main
 

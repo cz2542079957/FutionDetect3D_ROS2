@@ -1,5 +1,8 @@
 #pragma once
-#include "buzzerController.h"
+#include "message/msg/car_encoder_data.hpp"
+#include "message/msg/car_motion_control.hpp"
+#include "message/msg/car_servo_data.hpp"
+#include "message/msg/mode_control.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "serial.h"
 
@@ -43,12 +46,21 @@ class CarMasterNode : public rclcpp::Node {
    private:
     // 话题节点前缀
     std::string nodePrefix = "/carMasterNode";
-    // 发布者
-    //  rclcpp::Publisher<message::msg::ImuData>::SharedPtr publisher;
+    // 编码器数据发布者
+    rclcpp::Publisher<message::msg::CarEncoderData>::SharedPtr encoderDataPublisher;
+    // 舵机数据发布者
+    rclcpp::Publisher<message::msg::CarServoData>::SharedPtr servoDataPublisher;
 
-    // void rawDataHandler(std::vector<uint8_t> arr, int count);
+    std::thread executorThread;
+    bool executorRunning = false;
+    std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> executor;
+    // 模式控制订阅者
+    rclcpp::Subscription<message::msg::ModeControl>::SharedPtr modeControlSubscriber;
+    // 运动控制订阅者
+    rclcpp::Subscription<message::msg::CarMotionControl>::SharedPtr motionControlSubscriber;
 
-    // void publish(message::msg::ImuData::SharedPtr& imuData);
+    void modeControlCallback(const message::msg::ModeControl::SharedPtr msg);
+    void motionControlCallback(const message::msg::CarMotionControl::SharedPtr msg);
 
     // 串口
     serial::Serial* serial;
@@ -58,9 +70,6 @@ class CarMasterNode : public rclcpp::Node {
     std::vector<uint8_t> rawDataBuffer;
     // 帧头部
     std::vector<uint8_t> frameHeader = {0xFF, 0xCC};
-
-    // 蜂鸣器控制器
-    BuzzerController* buzzerController;
 
     void frameParser();
 

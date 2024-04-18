@@ -3,12 +3,16 @@
 #include "tasksManager.h"
 
 CarMasterNode::CarMasterNode() : Node("carMasterNode") {
-    buzzerController = new BuzzerController();
+    encoderDataPublisher = this->create_publisher<message::msg::CarEncoderData>(nodePrefix + "/encoderData", rclcpp::QoS(rclcpp::KeepLast(10)));
+    servoDataPublisher = this->create_publisher<message::msg::CarServoData>(nodePrefix + "/servoData", rclcpp::QoS(rclcpp::KeepLast(10)));
+    modeControlSubscriber = this->create_subscription<message::msg::ModeControl>(nodePrefix + "/modeControl", rclcpp::QoS(rclcpp::KeepLast(10)),
+                                                                                 std::bind(&CarMasterNode::modeControlCallback, this, std::placeholders::_1));
+    motionControlSubscriber = this->create_subscription<message::msg::CarMotionControl>(
+        nodePrefix + "/motionControl", rclcpp::QoS(rclcpp::KeepLast(10)), std::bind(&CarMasterNode::motionControlCallback, this, std::placeholders::_1));
     RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "小车控制板节点初始化完成");
 }
 
 CarMasterNode::~CarMasterNode() {
-    delete buzzerController;
     delete serial;
     RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "小车控制板节点销毁");
 }
@@ -54,6 +58,12 @@ void CarMasterNode::send(std::vector<uint8_t> data) {
         // 发送帧
         serial->write(data);
     }
+}
+
+void CarMasterNode::modeControlCallback(const message::msg::ModeControl::SharedPtr msg) { printf("当前模式：%d\n", msg->mode); }
+
+void CarMasterNode::motionControlCallback(const message::msg::CarMotionControl::SharedPtr msg) {
+    RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "运动控制：%d, %d", msg->state, msg->speed);
 }
 
 void CarMasterNode::frameParser() {
@@ -108,6 +118,21 @@ void CarMasterNode::frameParser() {
     }
 }
 
-void CarMasterNode::start() {}
+void CarMasterNode::start() {
+    executorThread = std::thread([this]() {
+        executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+        executor->add_node(this->shared_from_this());
+        executor->spin();
+    });
+    RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "小车控制板节点开始运行");
+}
 
-void CarMasterNode::end() {}
+void CarMasterNode::end() {
+    RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "正在等待“executor”工作线程退出");
+    executor->cancel();
+    if (executorThread.joinable()) {
+        executorThread.join(); 
+    }  
+    RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "“executor”工作线程[退出]");
+    RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "小车控制板节点终止运行");
+}

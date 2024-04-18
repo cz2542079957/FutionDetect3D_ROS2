@@ -4,7 +4,6 @@ project(fusion_detect_3d)
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
-
 # SET(CMAKE_BUILD_TYPE "Debug")
 # SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
 # SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall") 
@@ -12,13 +11,8 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED) 
-find_package(std_msgs REQUIRED) 
-find_package(sensor_msgs REQUIRED) 
-find_package(std_srvs REQUIRED)     
-find_package(message REQUIRED)
-# 查找udev
-find_library(UDEV_LIBRARY NAMES udev)
-find_path(UDEV_INCLUDE_DIR NAMES libudev.h) 
+find_package(std_msgs REQUIRED)   
+find_package(message REQUIRED) 
 
 # 雷达sdk
 set(SLLIDAR_SDK_PATH "./lib/lidarSdk") 
@@ -35,55 +29,41 @@ FILE(GLOB SERIAL_LIB_SRC
   "${SERIAL_LIB_PATH}/src/*.cc" 
   "${SERIAL_LIB_PATH}/src/list_ports/*.cc"
 )
+ 
 
 
 include_directories(
   ${SLLIDAR_SDK_PATH}/include 
   ${SLLIDAR_SDK_PATH}/src 
   ${SERIAL_LIB_PATH}/include 
-  ${SERIAL_LIB_PATH}/src
-  ${MSG_LIB_PATH}/msg
-  ${Boost_INCLUDE_DIRS}
-  ${UDEV_INCLUDE_DIR}
+  ${SERIAL_LIB_PATH}/src 
+  ${Boost_INCLUDE_DIRS} 
   ./src
-  ./src/lidar
-  ./src/imu
-  ./src/car
+  ./src/nodes 
   ./lib
   ./include
-  ./include/lidar
-  ./include/imu
-  ./include/car
+  ./include/nodes 
 )
  
 # 项目文件
-FILE(GLOB SOURCES
-  "./include/lidar/*.h"
-  "./include/imu/*.h"
-  "./include/car/*.h"
+FILE(GLOB SOURCES 
+  "./include/nodes/*.h"
   "./include/*.h"
-  ./main.cpp
-  "./src/lidar/*.cpp"
-  "./src/imu/*.cpp"
-  "./src/car/*.cpp"
+  ./main.cpp 
+  "./src/nodes/*.cpp"
   "./src/*.cpp"
 )
 
-
+# 创建可执行文件并链接所需依赖
 add_executable(main ${SOURCES} ${SLLIDAR_SDK_SRC} ${SERIAL_LIB_SRC} ) 
 ament_target_dependencies(
   main
   rclcpp
-  std_msgs 
-  sensor_msgs
-  std_srvs 
-  message
-  # imuData
+  std_msgs  
+  message  
 )
 
-  
-target_link_libraries(main ${UDEV_LIBRARY})
-
+# 安装目标到指定位置
 install(TARGETS main DESTINATION lib/${PROJECT_NAME})
 target_compile_options(main PRIVATE "-w")  # 禁用警告
 ament_package()

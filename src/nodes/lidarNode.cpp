@@ -4,10 +4,7 @@
 
 LidarNode::LidarNode() : Node("lidarNode") {
     publisher = this->create_publisher<message::msg::LidarData>(nodePrefix + "/lidarScan", rclcpp::QoS(rclcpp::KeepLast(10)));
-    startServer = this->create_service<std_srvs::srv::Empty>(nodePrefix + "/startLidarMotor",
-                                                             std::bind(&LidarNode::startMotor, this, std::placeholders::_1, std::placeholders::_2));
-    stopServer = this->create_service<std_srvs::srv::Empty>(nodePrefix + "/stopLidarMotor",
-                                                            std::bind(&LidarNode::stopMotor, this, std::placeholders::_1, std::placeholders::_2));
+    
     RCLCPP_INFO(rclcpp::get_logger("LidarNode"), "雷达节点初始化完成");
 }
 
@@ -85,9 +82,6 @@ int LidarNode::work(TasksManager tm, Task& task) {
     if (driver->isConnected()) driver->disconnect();
 }
 
-bool LidarNode::startMotor(const std::shared_ptr<std_srvs::srv::Empty::Request> req, std::shared_ptr<std_srvs::srv::Empty::Response> res) { return false; }
-
-bool LidarNode::stopMotor(const std::shared_ptr<std_srvs::srv::Empty::Request> req, std::shared_ptr<std_srvs::srv::Empty::Response> res) { return false; }
 
 void LidarNode::publish(message::msg::LidarData::SharedPtr& lidarData) {
     if (!publisher) {

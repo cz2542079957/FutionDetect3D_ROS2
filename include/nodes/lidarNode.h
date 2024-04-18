@@ -5,8 +5,6 @@
 #include "math.h"
 #include "message/msg/lidar_data.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "std_srvs/srv/empty.hpp"
-// #include "sensor_msgs/msg/laser_scan.hpp"
 #include "sl_lidar.h"
 #include "sl_types.h"
 using namespace sl;
@@ -42,10 +40,6 @@ class LidarNode : public rclcpp::Node {
     std::string nodePrefix = "/lidarNode";
     // 发布者
     rclcpp::Publisher<message::msg::LidarData>::SharedPtr publisher;
-    // 启动服务 ..
-    rclcpp::Service<std_srvs::srv::Empty>::SharedPtr startServer;
-    // 停止服务
-    rclcpp::Service<std_srvs::srv::Empty>::SharedPtr stopServer;
 
     // 雷达驱动
     ILidarDriver* driver;
@@ -59,9 +53,6 @@ class LidarNode : public rclcpp::Node {
     float maxDistance = 30;
     // 频率 hz
     int frequency = 10;
-
-    bool startMotor(const std::shared_ptr<std_srvs::srv::Empty::Request> req, std::shared_ptr<std_srvs::srv::Empty::Response> res);
-    bool stopMotor(const std::shared_ptr<std_srvs::srv::Empty::Request> req, std::shared_ptr<std_srvs::srv::Empty::Response> res);
 
     void publish(message::msg::LidarData::SharedPtr& lidarData);
     void clean();
