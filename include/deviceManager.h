@@ -22,7 +22,7 @@ enum DeviceID {
 
 extern std::map<DeviceID, std::string> deviceNodes;  // 设备节点映射表
 extern std::map<DeviceID, std::string> deviceNames;  // 设备名称映射表
-extern std::map<DeviceID, int> deviceBaudRates;     // 设备串口波特率映射表
+extern std::map<DeviceID, int> deviceBaudRates;      // 设备串口波特率映射表
 
 // 需要的设备
 struct DeviceNeed {
@@ -58,7 +58,7 @@ class DeviceManager : rclcpp::Node {
 
    private:
     // 需要的设备列表
-    std::vector<DeviceNeed> devicesNeed = {{DIVECE_ID_CARMASTER, false}, {DIVECE_ID_LIDAR, false}, {DIVECE_ID_IMU, false}};
+    std::vector<DeviceNeed> devicesNeed = {{DIVECE_ID_CARMASTER, true}, {DIVECE_ID_LIDAR, false}, {DIVECE_ID_IMU, false}};
     // 设备列表
     std::vector<DeviceInfo> devices;
     // 扫描可用设备

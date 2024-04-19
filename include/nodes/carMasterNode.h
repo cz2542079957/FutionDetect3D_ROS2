@@ -35,6 +35,11 @@ class CarMasterNode : public rclcpp::Node {
     CarMasterNode();
     ~CarMasterNode();
 
+    /**
+     * @description: 进程执行函数
+     * @param {TasksManager} tm
+     * @param {Task&} task
+     */
     int work(TasksManager tm, Task& task);
 
     /**
@@ -59,7 +64,16 @@ class CarMasterNode : public rclcpp::Node {
     // 运动控制订阅者
     rclcpp::Subscription<message::msg::CarMotionControl>::SharedPtr motionControlSubscriber;
 
+    /**
+     * @description: 模式控制回调函数，ros话题收到上位机消息则回调该函数，处理发送给stm32板
+     * @param {SharedPtr} msg
+     */
     void modeControlCallback(const message::msg::ModeControl::SharedPtr msg);
+
+    /**
+     * @description: 运动控制回调函数，ros话题收到上位机消息则回调该函数，处理发送给stm32板
+     * @param {SharedPtr} msg
+     */
     void motionControlCallback(const message::msg::CarMotionControl::SharedPtr msg);
 
     // 串口
@@ -71,7 +85,23 @@ class CarMasterNode : public rclcpp::Node {
     // 帧头部
     std::vector<uint8_t> frameHeader = {0xFF, 0xCC};
 
+    /**
+     * @description: 对stm32板发送的串口数据进行解析
+     */
     void frameParser();
+
+    // 用于保存当前运动状态
+    bool motionChanged = false;
+     uint8_t lastMode = 0, lastState = 0, lastSpeed = 0;
+    uint8_t mode = 0;
+    uint8_t state = 0;
+    uint8_t speed = 0;
+
+    /**
+     * @description: 运动控制处理（放在执行函数中周期性处理）
+     * @return {*}
+     */
+    void motionHandler();
 
     void start();
     void end();

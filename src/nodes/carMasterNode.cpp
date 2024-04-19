@@ -21,8 +21,9 @@ int CarMasterNode::work(TasksManager tm, Task& task) {
     serial = new serial::Serial(task.deviceInfo.node, task.deviceInfo.baudRate);
     if (!serial->isOpen()) serial->open();
     start();
-
+    uint64_t tick = 0;
     while (task.running) {
+        // 读取数据
         unsigned long count = serial->available();
         if (count != 0) {
             // 读取这些数据
@@ -34,11 +35,15 @@ int CarMasterNode::work(TasksManager tm, Task& task) {
             // }
             rawDataBuffer.insert(rawDataBuffer.end(), arr.begin(), arr.end());
         }
+        // 解析数据
         if (rawDataBuffer.size() > 0) {
-            // 解析数据
             frameParser();
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        // 处理和发送控制指令
+        if (tick % 40 == 0) motionHandler();
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        tick++;
     }
     end();
     return 0;
@@ -60,10 +65,17 @@ void CarMasterNode::send(std::vector<uint8_t> data) {
     }
 }
 
-void CarMasterNode::modeControlCallback(const message::msg::ModeControl::SharedPtr msg) { printf("当前模式：%d\n", msg->mode); }
+void CarMasterNode::modeControlCallback(const message::msg::ModeControl::SharedPtr msg) {
+    RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "当前模式：%d\n", msg->mode);
+    if (mode != msg->mode) mode = msg->mode;
+    motionChanged = true;
+}
 
 void CarMasterNode::motionControlCallback(const message::msg::CarMotionControl::SharedPtr msg) {
-    RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "运动控制：%d, %d", msg->state, msg->speed);
+    // RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "运动控制：%d, %d", msg->state, msg->speed);
+    state = msg->state;
+    speed = msg->speed;
+    motionChanged = true;
 }
 
 void CarMasterNode::frameParser() {
@@ -101,11 +113,15 @@ void CarMasterNode::frameParser() {
                     }
                     case FRAME_RESPONSE_ENCODER: {
                         // 编码器（带符号）
-                        int8_t encoder1 = rawDataBuffer[4];
-                        int8_t encoder2 = rawDataBuffer[5];
-                        int8_t encoder3 = rawDataBuffer[6];
-                        int8_t encoder4 = rawDataBuffer[7];
-                        // RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "编码器：%d %d %d %d", encoder1, encoder2, encoder3, encoder4);
+                        auto message = std::make_shared<message::msg::CarEncoderData>();
+                        message->timestemp = this->now().nanoseconds() / 1000000;
+                        message->encoder1 = rawDataBuffer[4];
+                        message->encoder2 = rawDataBuffer[5];
+                        message->encoder3 = rawDataBuffer[6];
+                        message->encoder4 = rawDataBuffer[7]; 
+                        // RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "编码器：%ld, %d, %d, %d, %d", now.nanoseconds() / 1000000, encoder1, encoder2,
+                        //             encoder3, encoder4);
+                        encoderDataPublisher->publish(*message);
                         break;
                     }
                 }
@@ -116,6 +132,33 @@ void CarMasterNode::frameParser() {
             break;
         }
     }
+}
+
+void CarMasterNode::motionHandler() {
+    if (mode == 0) {
+        // 静止模式
+        state = 0;
+        speed = 0;
+    } else if (mode == 1) {
+        // 扫描模式
+        if (speed > 30) speed = 30;  // 限制速度
+
+    } else if (mode == 2) {
+        // 运动模式
+    }
+
+    // 没有接收到控制信号，设置停止
+    if (!motionChanged) {
+        state = 0, speed = 0;
+    }
+
+    // 发送数据
+    if (lastState != state || lastSpeed != speed) {
+        RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "模式：%d, 状态: %d, 速度：%d", mode, state, speed);
+        send(std::vector<uint8_t>{0x61, state, speed});
+    }
+    lastMode = mode, lastState = state, lastSpeed = speed;
+    motionChanged = false;
 }
 
 void CarMasterNode::start() {
@@ -131,8 +174,8 @@ void CarMasterNode::end() {
     RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "正在等待“executor”工作线程退出");
     executor->cancel();
     if (executorThread.joinable()) {
-        executorThread.join(); 
-    }  
+        executorThread.join();
+    }
     RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "“executor”工作线程[退出]");
     RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "小车控制板节点终止运行");
 }
