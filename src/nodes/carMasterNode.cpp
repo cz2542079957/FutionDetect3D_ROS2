@@ -40,7 +40,7 @@ int CarMasterNode::work(TasksManager tm, Task& task) {
             frameParser();
         }
         // 处理和发送控制指令
-        if (tick % 40 == 0) motionHandler();
+        if (tick % 10 == 0) motionHandler();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
         tick++;
@@ -52,23 +52,33 @@ int CarMasterNode::work(TasksManager tm, Task& task) {
 void CarMasterNode::send(std::vector<uint8_t> data) {
     if (serial->isOpen()) {
         // 计算校验和
-        uint8_t checkSum = std::accumulate(data.begin() + 3, data.end(), 0);
-        checkSum = checkSum & 0xff;
+        // uint8_t checkSum = std::accumulate(data.begin(), data.end(), 0);
+        // checkSum = checkSum & 0xff;
         // 将校验和添加到数据包的末尾
-        data.push_back(checkSum);
+        data.push_back(0x00);
         // 插入帧头
         data.insert(data.begin(), data.size());
         data.insert(data.begin(), 0xCC);
         data.insert(data.begin(), 0xFF);
+        // 打印
+        // for (int i = 0; i < data.size(); i++) {
+        //     printf("%02X ", static_cast<int>(data[i]));
+        // }
+        // printf("\n");
         // 发送帧
         serial->write(data);
     }
 }
 
 void CarMasterNode::modeControlCallback(const message::msg::ModeControl::SharedPtr msg) {
-    RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "当前模式：%d\n", msg->mode);
+    // RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "当前模式：%d", msg->mode);
     if (mode != msg->mode) mode = msg->mode;
     motionChanged = true;
+    if (mode == 1) {  // 扫描模式，开启自动扫描
+        send(std::vector<uint8_t>{FRAME_FUNC_AUTO_SCAN, 0x01});
+    } else {
+        send(std::vector<uint8_t>{FRAME_FUNC_AUTO_SCAN, 0x00});
+    }
 }
 
 void CarMasterNode::motionControlCallback(const message::msg::CarMotionControl::SharedPtr msg) {
@@ -118,10 +128,20 @@ void CarMasterNode::frameParser() {
                         message->encoder1 = rawDataBuffer[4];
                         message->encoder2 = rawDataBuffer[5];
                         message->encoder3 = rawDataBuffer[6];
-                        message->encoder4 = rawDataBuffer[7]; 
+                        message->encoder4 = rawDataBuffer[7];
                         // RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "编码器：%ld, %d, %d, %d, %d", now.nanoseconds() / 1000000, encoder1, encoder2,
                         //             encoder3, encoder4);
                         encoderDataPublisher->publish(*message);
+                        break;
+                    }
+                    case FRAME_RESPONSE_SERVO: {
+                        // 舵机
+                        auto message = std::make_shared<message::msg::CarServoData>();
+                        message->timestemp = this->now().nanoseconds() / 1000000;
+                        message->angle1 = ((rawDataBuffer[4] & 0xff) + ((rawDataBuffer[5] & 0xff) << 8)) / 10.0;
+                        message->angle2 = ((rawDataBuffer[6] & 0xff) + ((rawDataBuffer[7] & 0xff) << 8)) / 10.0;
+                        // RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "舵机：%f, %f",  message->angle1, message->angle2);
+                        servoDataPublisher->publish(*message);
                         break;
                     }
                 }
@@ -150,12 +170,13 @@ void CarMasterNode::motionHandler() {
     // 没有接收到控制信号，设置停止
     if (!motionChanged) {
         state = 0, speed = 0;
+    } else {
     }
 
     // 发送数据
     if (lastState != state || lastSpeed != speed) {
         RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "模式：%d, 状态: %d, 速度：%d", mode, state, speed);
-        send(std::vector<uint8_t>{0x61, state, speed});
+        send(std::vector<uint8_t>{FRAME_FUNC_MOTION, state, speed});
     }
     lastMode = mode, lastState = state, lastSpeed = speed;
     motionChanged = false;
