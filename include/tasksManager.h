@@ -28,9 +28,16 @@ class TasksManager {
     // 退出
     void stop();
 
+    // 获取模式（由LidarNode调用）
+    int getMode();
+    // 设置模式（由carMasterNode调用）
+    void setMode(int val);
+
    private:
     // running
     bool running = false;
+    // 当前模式（和小车模式同步）
+    int mode = 0;  // 0: 静止 1: 扫描模式 2: 运动模式
 
     // 当前任务 （指针）
     std::vector<Task *> tasks;

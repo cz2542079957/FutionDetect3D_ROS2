@@ -41,7 +41,7 @@ class CarMasterNode : public rclcpp::Node {
      * @param {TasksManager} tm
      * @param {Task&} task
      */
-    int work(TasksManager tm, Task& task);
+    int work(TasksManager& tm, Task& task);
 
     /**
      * @description: 调用该对象初始化的串口发送数据

@@ -12,10 +12,10 @@ ImuNode ::~ImuNode() {
     RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "惯导模块节点销毁");
 }
 
-int ImuNode::work(TasksManager tm, Task& task) {
+int ImuNode::work(TasksManager& tm, Task& task) {
     serial = new serial::Serial(task.deviceInfo.node, task.deviceInfo.baudRate);
     if (!serial->isOpen()) serial->open();
-    int microseconds = 1000 * 1000 / this->frequency;
+    int microseconds = 1000000 / this->frequency;
     RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "惯导模块节点开始运行");
     while (task.running) {
         unsigned long count = serial->available();

@@ -1,7 +1,7 @@
 
 #include "tasksManager.h"
 
-TasksManager::TasksManager(/* args */) {}
+TasksManager::TasksManager() { RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "任务管理器[初始化]"); }
 
 TasksManager::~TasksManager() {}
 
@@ -25,7 +25,6 @@ void TasksManager::run(std::vector<DeviceInfo> devices) {
         } else if (devices[i].id == DIVECE_ID_CARMASTER) {
             addRosMasterTask(*task);
         }
-        /* todo */
     }
     while (running) {
         std::this_thread::yield();
@@ -48,11 +47,18 @@ void TasksManager::stop() {
     running = false;
 }
 
+int TasksManager::getMode() { return mode; }
+
+void TasksManager::setMode(int val) { mode = val; }
+
 void TasksManager::addLidarTask(Task &task) {
     task.workThread = std::thread([&]() {
         RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "激光雷达线程[启动]");
         auto lidarNode = std::make_shared<LidarNode>();
-        lidarNode->work(*this, task);
+        if (lidarNode->work(*this, task) != 0) {
+            RCLCPP_ERROR(rclcpp::get_logger("TasksManager"), "激光雷达线程[故障退出]");
+            return;
+        }
         RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "激光雷达线程[退出]");
     });
     // task.workThread.detach();

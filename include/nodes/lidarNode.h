@@ -33,7 +33,10 @@ class LidarNode : public rclcpp::Node {
     ~LidarNode();
 
     // 开始运行
-    int work(TasksManager tm, Task& task);
+    int work(TasksManager& tm, Task& task);
+
+    int start();
+    int stop();
 
    private:
     // 节点前缀

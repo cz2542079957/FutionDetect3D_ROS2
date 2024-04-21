@@ -4,7 +4,6 @@
 
 LidarNode::LidarNode() : Node("lidarNode") {
     publisher = this->create_publisher<message::msg::LidarData>(nodePrefix + "/lidarScan", rclcpp::QoS(rclcpp::KeepLast(10)));
-    
     RCLCPP_INFO(rclcpp::get_logger("LidarNode"), "雷达节点初始化完成");
 }
 
@@ -15,7 +14,7 @@ LidarNode ::~LidarNode() {
 
 std::map<LidarMode, std::string> lidarModeNames = {{STANDARD_MODE, "Standard"}, {DENSE_MODE, "DenseBoost"}};
 
-int LidarNode::work(TasksManager tm, Task& task) {
+int LidarNode::work(TasksManager& tm, Task& task) {
     driver = *createLidarDriver();                                                       // 创建雷达驱动
     channel = *createSerialPortChannel(task.deviceInfo.node, task.deviceInfo.baudRate);  // 创建串口通道
     sl_result res;
@@ -26,15 +25,12 @@ int LidarNode::work(TasksManager tm, Task& task) {
         clean();
         return -1;
     }
+    // 设置电机速度
+    driver->setMotorSpeed();
+
     // 启动扫描
-    LidarScanMode currentMode;  // 当前扫描模式
-    driver->setMotorSpeed();    // 启动电机
-    res = driver->startScanExpress(false /* 不强制扫描 */, DENSE_MODE, 0, &currentMode);
-    if (SL_IS_OK(res)) {
-        RCLCPP_INFO(rclcpp::get_logger("LidarNode"), "当前扫描模式： %s, 采样率: %d Khz, 最大扫描距离: %.1f m, 扫描频率:%d Hz, ", currentMode.scan_mode,
-                    (int)(1000 / currentMode.us_per_sample + 0.5), maxDistance, frequency);
-    } else {
-        RCLCPP_ERROR(rclcpp::get_logger("LidarNode"), "启动扫描失败: %08x!", res);
+    if (tm.getMode() == 1 && start() != 0) {
+        return -1;
     }
 
     // 雷达开始扫描时间
@@ -43,10 +39,23 @@ int LidarNode::work(TasksManager tm, Task& task) {
     rclcpp::Time endTime;
     // 扫描时间间隔
     int64_t duration;
-    // 电机预启动
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
+    // 待发送的ros雷达数据
+    auto lidarData = std::make_shared<message::msg::LidarData>();
     while (task.running) {
+        if (tm.getMode() != 1) {
+            stop();
+            while (tm.getMode() != 1 && task.running) {
+                // 等待雷达模式切换到扫描模式
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+            if (task.running) {
+                // 如果任务还在进行，则开始扫描
+                start();
+            } else {
+                break;
+            }
+        }
+
         size_t count = 8192;
         sl_lidar_response_measurement_node_hq_t nodes[count];
         startTime = this->now();
@@ -63,14 +72,12 @@ int LidarNode::work(TasksManager tm, Task& task) {
             continue;
         }
 
-        // 计算每个点的平均事件间隔（ns）
+        // 计算每个点的平均时间间隔（ns）
         double timeInterval = (duration / count);
-
-        auto lidarData = std::make_shared<message::msg::LidarData>();
         lidarData->data.resize(count);
         lidarData->start_time = startTime.nanoseconds();
         lidarData->duration = duration;
-        // RCLCPP_INFO_STREAM(this->get_logger(), count);
+        // RCLCPP_INFO(rclcpp::get_logger("LidarNode"), "个数：%d", count);
         for (int i = 0; i < count; i++) {
             lidarData->data[i].timestemp = startTime.nanoseconds() + (i * timeInterval);
             lidarData->data[i].angle = getAngle(nodes[i]);
@@ -78,10 +85,31 @@ int LidarNode::work(TasksManager tm, Task& task) {
         }
         publish(lidarData);
     }
-    driver->stop();
+    stop();
     if (driver->isConnected()) driver->disconnect();
+    return 0;
 }
 
+int LidarNode::start() {
+    LidarScanMode currentMode;  // 当前扫描模式
+    sl_result res = driver->startScanExpress(false, DENSE_MODE, 0, &currentMode);
+    if (SL_IS_OK(res)) {
+        // 电机预启动
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        RCLCPP_INFO(rclcpp::get_logger("LidarNode"), "当前扫描模式： %s, 采样率: %d Khz, 最大扫描距离: %.1f m, 扫描频率:%d Hz, ", currentMode.scan_mode,
+                    (int)(1000 / currentMode.us_per_sample + 0.5), maxDistance, frequency);
+        return 0;
+    } else {
+        RCLCPP_ERROR(rclcpp::get_logger("LidarNode"), "启动扫描失败: %08x!", res);
+        return -1;
+    }
+}
+
+int LidarNode::stop() {
+    driver->stop();
+    RCLCPP_INFO(rclcpp::get_logger("LidarNode"), "激光雷达停止扫描");
+    return 0;
+}
 
 void LidarNode::publish(message::msg::LidarData::SharedPtr& lidarData) {
     if (!publisher) {

@@ -11,7 +11,7 @@ class ImuNode : public rclcpp::Node {
     ImuNode();
     ~ImuNode();
 
-    int work(TasksManager tm, Task& task);
+    int work(TasksManager& tm, Task& task);
 
    private:
     // 话题节点前缀

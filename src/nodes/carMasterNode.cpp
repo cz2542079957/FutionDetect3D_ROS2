@@ -17,7 +17,7 @@ CarMasterNode::~CarMasterNode() {
     RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "小车控制板节点销毁");
 }
 
-int CarMasterNode::work(TasksManager tm, Task& task) {
+int CarMasterNode::work(TasksManager &tm, Task& task) {
     serial = new serial::Serial(task.deviceInfo.node, task.deviceInfo.baudRate);
     if (!serial->isOpen()) serial->open();
     start();
@@ -40,7 +40,10 @@ int CarMasterNode::work(TasksManager tm, Task& task) {
             frameParser();
         }
         // 处理和发送控制指令
-        if (tick % 10 == 0) motionHandler();
+        if (tick % 10 == 0) {
+            motionHandler();   // 处理运动指令
+            tm.setMode(mode);  // 传出mode值，通知雷达节点
+        }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
         tick++;
