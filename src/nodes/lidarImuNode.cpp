@@ -1,22 +1,22 @@
-#include "imuNode.h"
+#include "lidarImuNode.h"
 
 #include "tasksManager.h"
 
-ImuNode ::ImuNode() : Node("imuNode") {
+LidarImuNode ::LidarImuNode() : Node("lidarImuNode") {
     publisher = this->create_publisher<message::msg::ImuData>(nodePrefix + "/imuData", rclcpp::QoS(rclcpp::KeepLast(10)));
-    RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "惯导模块节点初始化完成");
+    RCLCPP_INFO(rclcpp::get_logger("LidarImuNode"), "惯导模块节点初始化完成");
 }
 
-ImuNode ::~ImuNode() {
+LidarImuNode ::~LidarImuNode() {
     delete serial;
-    RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "惯导模块节点销毁");
+    RCLCPP_INFO(rclcpp::get_logger("LidarImuNode"), "惯导模块节点销毁");
 }
 
-int ImuNode::work(TasksManager& tm, Task& task) {
+int LidarImuNode::work(TasksManager& tm, Task& task) {
     serial = new serial::Serial(task.deviceInfo.node, task.deviceInfo.baudRate);
     if (!serial->isOpen()) serial->open();
     int microseconds = 1000000 / this->frequency;
-    RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "惯导模块节点开始运行");
+    RCLCPP_INFO(rclcpp::get_logger("LidarImuNode"), "惯导模块节点开始运行");
     while (task.running) {
         unsigned long count = serial->available();
         if (count <= 0) {
@@ -35,11 +35,11 @@ int ImuNode::work(TasksManager& tm, Task& task) {
             rawDataHandler(arr, realCount);
         }
     }
-    RCLCPP_INFO(rclcpp::get_logger("ImuNode"), "惯导模块节点终止运行");
+    RCLCPP_INFO(rclcpp::get_logger("LidarImuNode"), "惯导模块节点终止运行");
     return 0;
 }
 
-void ImuNode::rawDataHandler(std::vector<uint8_t> arr, int count) {
+void LidarImuNode::rawDataHandler(std::vector<uint8_t> arr, int count) {
     rawDataBuffer.insert(rawDataBuffer.end(), arr.begin(), arr.end());
     if (rawDataBuffer.size() < 11) return;
     // 找到开头节点
@@ -89,18 +89,18 @@ void ImuNode::rawDataHandler(std::vector<uint8_t> arr, int count) {
                     dataFrame.angular_velocity.angular_velocity_y = (short)((short)(rawDataBuffer[i + 5] << 8) | rawDataBuffer[i + 4]) * angularVelocityCoe;
                     dataFrame.angular_velocity.angular_velocity_z = (short)((short)(rawDataBuffer[i + 7] << 8) | rawDataBuffer[i + 6]) * angularVelocityCoe;
                     // printf("角速度 x:%lf y:%lf z:%lf\n", wx, wy, wz);
+                    // printf("time: %ld\n", this->now().nanoseconds());
                     break;
                 }
-                // case 0x53: {
-                //     //角度
-                //     dataFrame.angular.roll = (short)((short)(rawDataBuffer[i + 3] << 8) | rawDataBuffer[i + 2]) * angularCoe;
-                //     dataFrame.angular.pitch = (short)((short)(rawDataBuffer[i + 5] << 8) | rawDataBuffer[i + 4]) * angularCoe;
-                //     dataFrame.angular.yaw = (short)((short)(rawDataBuffer[i + 7] << 8) | rawDataBuffer[i + 6]) * angularCoe;
-                //     // printf("角度 x:%lf y:%lf z:%lf\n", dataFrame.angular.roll, dataFrame.angular.pitch, dataFrame.angular.yaw);
-                //     //帧最后一段，添加整个帧到待传送容器
-                //     handledData->data.push_back(dataFrame);
-                //     break;
-                // }
+                case 0x53: {
+                    // 角度
+                    dataFrame.angular.roll = (short)((short)(rawDataBuffer[i + 3] << 8) | rawDataBuffer[i + 2]) * angularCoe;
+                    dataFrame.angular.pitch = (short)((short)(rawDataBuffer[i + 5] << 8) | rawDataBuffer[i + 4]) * angularCoe;
+                    dataFrame.angular.yaw = (short)((short)(rawDataBuffer[i + 7] << 8) | rawDataBuffer[i + 6]) * angularCoe;
+                    // printf("角度 x:%lf y:%lf z:%lf\n", dataFrame.angular.roll, dataFrame.angular.pitch, dataFrame.angular.yaw);
+                    // handledData->data.push_back(dataFrame);
+                    break;
+                }
                 case 0x54: {
                     // 磁场
                     dataFrame.magnetic_field.magnetic_field_x = ((short)(rawDataBuffer[i + 3] << 8) | rawDataBuffer[i + 2]);
@@ -129,12 +129,12 @@ void ImuNode::rawDataHandler(std::vector<uint8_t> arr, int count) {
         }
         break;
     }
-    // RCLCPP_INFO(rclcpp::get_logger("ImuNode"), " %u", publisher);
+    // RCLCPP_INFO(rclcpp::get_logger("LidarImuNode"), " %u", publisher);
     publish(handledData);
     rawDataBuffer.erase(rawDataBuffer.begin(), rawDataBuffer.begin() + i);
 }
 
-void ImuNode::publish(message::msg::ImuData::SharedPtr& imuData) {
+void LidarImuNode::publish(message::msg::ImuData::SharedPtr& imuData) {
     if (!publisher) {
         // publisher被销毁
         return;

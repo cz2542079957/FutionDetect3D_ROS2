@@ -2,7 +2,7 @@
  * @Author: cz2542079957 2542079957@qq.com
  * @Date: 2024-01-10 11:54:17
  * @LastEditors: cz2542079957 2542079957@qq.com
- * @LastEditTime: 2024-04-14 11:37:02
+ * @LastEditTime: 2024-04-22 10:34:21
  * @FilePath: /fusion_detect_3d/main.cpp
  * @Description: fusion detect 3d 项目中部署于[主控开发板]的子项目
  *
@@ -13,8 +13,6 @@
 #include <iostream>
 
 #include "deviceManager.h"
-#include "imuNode.h"
-#include "lidarNode.h"
 #include "tasksManager.h"
 
 DeviceManager* deviceManager;

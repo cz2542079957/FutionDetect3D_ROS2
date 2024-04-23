@@ -6,24 +6,24 @@
 class TasksManager;
 struct Task;
 
-class ImuNode : public rclcpp::Node {
+class LidarImuNode : public rclcpp::Node {
    public:
-    ImuNode();
-    ~ImuNode();
+    LidarImuNode();
+    ~LidarImuNode();
 
     int work(TasksManager& tm, Task& task);
 
    private:
     // 话题节点前缀
-    std::string nodePrefix = "/imuNode";
+    std::string nodePrefix = "/lidarImuNode";
     // 发布者
     rclcpp::Publisher<message::msg::ImuData>::SharedPtr publisher;
 
     // 串口
     serial::Serial* serial;
     // 数据接受频率 hz
-    int frequency = 100;
-    // buffer = 100;
+    int frequency = 200;
+    
     std::vector<uint8_t> rawDataBuffer;
 
     void rawDataHandler(std::vector<uint8_t> arr, int count);

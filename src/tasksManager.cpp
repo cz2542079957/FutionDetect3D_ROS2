@@ -67,7 +67,7 @@ void TasksManager::addLidarTask(Task &task) {
 void TasksManager::addImuTask(Task &task) {
     task.workThread = std::thread([&]() {
         RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "imu模块线程[启动]");
-        auto imuNode = std::make_shared<ImuNode>();
+        auto imuNode = std::make_shared<LidarImuNode>();
         imuNode->work(*this, task);
         RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "imu模块线程[退出]");
     });

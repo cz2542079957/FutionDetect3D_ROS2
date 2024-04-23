@@ -6,9 +6,9 @@ DeviceManager::DeviceManager() : Node("diviceManagerNode") {}
 DeviceManager::~DeviceManager() {}
 
 std::map<DeviceID, std::string> deviceNodes = {
-    {DIVECE_ID_CARMASTER, "/dev/rosmaster"},
+    {DIVECE_ID_CARMASTER, "/dev/ros-master"},
     {DIVECE_ID_LIDAR, "/dev/rplidar"},
-    {DIVECE_ID_IMU, "/dev/imu"},
+    {DIVECE_ID_IMU, "/dev/lidar-imu"},
     {DIVECE_ID_UNKNOW, "/dev"},
 };
 

@@ -6,7 +6,7 @@
 
 #include "carMasterNode.h"
 #include "deviceManager.h"
-#include "imuNode.h"
+#include "lidarImuNode.h"
 #include "lidarNode.h"
 
 struct Task {

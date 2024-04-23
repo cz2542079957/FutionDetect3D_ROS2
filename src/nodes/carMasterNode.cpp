@@ -17,7 +17,7 @@ CarMasterNode::~CarMasterNode() {
     RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "小车控制板节点销毁");
 }
 
-int CarMasterNode::work(TasksManager &tm, Task& task) {
+int CarMasterNode::work(TasksManager& tm, Task& task) {
     serial = new serial::Serial(task.deviceInfo.node, task.deviceInfo.baudRate);
     if (!serial->isOpen()) serial->open();
     start();
@@ -127,7 +127,7 @@ void CarMasterNode::frameParser() {
                     case FRAME_RESPONSE_ENCODER: {
                         // 编码器（带符号）
                         auto message = std::make_shared<message::msg::CarEncoderData>();
-                        message->timestemp = this->now().nanoseconds() / 1000000;
+                        message->timestemp = this->now().nanoseconds();
                         message->encoder1 = rawDataBuffer[4];
                         message->encoder2 = rawDataBuffer[5];
                         message->encoder3 = rawDataBuffer[6];
@@ -138,12 +138,14 @@ void CarMasterNode::frameParser() {
                         break;
                     }
                     case FRAME_RESPONSE_SERVO: {
+                        // 由于精度差，废弃
+
                         // 舵机
                         auto message = std::make_shared<message::msg::CarServoData>();
-                        message->timestemp = this->now().nanoseconds() / 1000000;
+                        message->timestemp = this->now().nanoseconds();
                         message->angle1 = ((rawDataBuffer[4] & 0xff) + ((rawDataBuffer[5] & 0xff) << 8)) / 10.0;
                         message->angle2 = ((rawDataBuffer[6] & 0xff) + ((rawDataBuffer[7] & 0xff) << 8)) / 10.0;
-                        // RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "舵机：%f, %f",  message->angle1, message->angle2);
+                        // RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "舵机：%f", message->angle1);
                         servoDataPublisher->publish(*message);
                         break;
                     }

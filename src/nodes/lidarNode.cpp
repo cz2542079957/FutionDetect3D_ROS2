@@ -65,6 +65,12 @@ int LidarNode::work(TasksManager& tm, Task& task) {
         if (res != SL_RESULT_OK) {
             continue;
         }
+        // 开始时间结束时间
+        // RCLCPP_INFO(rclcpp::get_logger("LidarNode"), "雷达扫描时间：%d, 开始时间: %d, 结束时间: %d", duration / 1000000, startTime.nanoseconds() / 1000000,
+        //             endTime.nanoseconds() / 1000000);
+        // RCLCPP_INFO(rclcpp::get_logger("LidarNode"), "100  angle: %d, distance: %d", nodes[100].angle_z_q14, nodes[100].dist_mm_q2);
+        // RCLCPP_INFO(rclcpp::get_logger("LidarNode"), "200 angle: %d, distance: %d", nodes[200].angle_z_q14, nodes[200].dist_mm_q2);
+        // RCLCPP_INFO(rclcpp::get_logger("LidarNode"), "400 angle: %d, distance: %d", nodes[400].angle_z_q14, nodes[400].dist_mm_q2);
 
         // 让数据按照角度值升序排列
         res = driver->ascendScanData(nodes, count);
@@ -82,6 +88,9 @@ int LidarNode::work(TasksManager& tm, Task& task) {
             lidarData->data[i].timestemp = startTime.nanoseconds() + (i * timeInterval);
             lidarData->data[i].angle = getAngle(nodes[i]);
             lidarData->data[i].distance = nodes[i].dist_mm_q2 / 4000.f;
+            // if (i % 100 == 0)
+            //     RCLCPP_INFO(rclcpp::get_logger("LidarNode"), "第%d个点，距离：%.2f，角度：%.2f，时间：%ld", i, lidarData->data[i].distance,
+            //             lidarData->data[i].angle, lidarData->data[i].timestemp);
         }
         publish(lidarData);
     }
