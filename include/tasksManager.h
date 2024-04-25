@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 
+#include "carImuNode.h"
 #include "carMasterNode.h"
 #include "deviceManager.h"
 #include "lidarImuNode.h"
@@ -45,7 +46,8 @@ class TasksManager {
     // 是否可以退出主循环
     pthread_mutex_t exit = PTHREAD_MUTEX_INITIALIZER;
 
+    void addCarMasterTask(Task &task);
     void addLidarTask(Task &task);
-    void addImuTask(Task &task);
-    void addRosMasterTask(Task &task);
+    void addLidarImuTask(Task &task);
+    void addCarImuTask(Task &task);
 };

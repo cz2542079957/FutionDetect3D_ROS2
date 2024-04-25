@@ -5,6 +5,8 @@
 CarMasterNode::CarMasterNode() : Node("carMasterNode") {
     encoderDataPublisher = this->create_publisher<message::msg::CarEncoderData>(nodePrefix + "/encoderData", rclcpp::QoS(rclcpp::KeepLast(10)));
     servoDataPublisher = this->create_publisher<message::msg::CarServoData>(nodePrefix + "/servoData", rclcpp::QoS(rclcpp::KeepLast(10)));
+    votageDataPublisher = this->create_publisher<message::msg::CarVotageData>(nodePrefix + "/votageData", rclcpp::QoS(rclcpp::KeepLast(10)));
+
     modeControlSubscriber = this->create_subscription<message::msg::ModeControl>(nodePrefix + "/modeControl", rclcpp::QoS(rclcpp::KeepLast(10)),
                                                                                  std::bind(&CarMasterNode::modeControlCallback, this, std::placeholders::_1));
     motionControlSubscriber = this->create_subscription<message::msg::CarMotionControl>(
@@ -120,14 +122,17 @@ void CarMasterNode::frameParser() {
                     case FRAME_RESPONSE: {
                     }
                     case FRAME_RESPONSE_VOTAGE: {
-                        float voltage = (rawDataBuffer[4] | (rawDataBuffer[5] << 8)) / 1000.0;
-                        RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "电压：%.2f", voltage);
+                        auto message = std::make_shared<message::msg::CarVotageData>();
+                        message->timestamp = this->now().nanoseconds();
+                        message->voltage = (rawDataBuffer[4] | (rawDataBuffer[5] << 8)) / 1000.0;
+                        // RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "电压：%.2f", message->voltage);
+                        votageDataPublisher->publish(*message);
                         break;
                     }
                     case FRAME_RESPONSE_ENCODER: {
                         // 编码器（带符号）
                         auto message = std::make_shared<message::msg::CarEncoderData>();
-                        message->timestemp = this->now().nanoseconds();
+                        message->timestamp = this->now().nanoseconds();
                         message->encoder1 = rawDataBuffer[4];
                         message->encoder2 = rawDataBuffer[5];
                         message->encoder3 = rawDataBuffer[6];
@@ -142,7 +147,7 @@ void CarMasterNode::frameParser() {
 
                         // 舵机
                         auto message = std::make_shared<message::msg::CarServoData>();
-                        message->timestemp = this->now().nanoseconds();
+                        message->timestamp = this->now().nanoseconds();
                         message->angle1 = ((rawDataBuffer[4] & 0xff) + ((rawDataBuffer[5] & 0xff) << 8)) / 10.0;
                         message->angle2 = ((rawDataBuffer[6] & 0xff) + ((rawDataBuffer[7] & 0xff) << 8)) / 10.0;
                         // RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "舵机：%f", message->angle1);

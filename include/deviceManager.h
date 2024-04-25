@@ -13,11 +13,12 @@
 
 // 设备ID
 enum DeviceID {
-    DIVECE_ID_CARMASTER,
-    DIVECE_ID_LIDAR,
-    DIVECE_ID_IMU,
-    DIVECE_COUNT,
-    DIVECE_ID_UNKNOW,
+    DIVICE_ID_CARMASTER,
+    DIVICE_ID_LIDAR,
+    DIVICE_ID_LIDAR_IMU,
+    DIVICE_ID_CAR_IMU,
+    DIVICE_COUNT,
+    DIVICE_ID_UNKNOW,
 };
 
 extern std::map<DeviceID, std::string> deviceNodes;  // 设备节点映射表
@@ -26,7 +27,7 @@ extern std::map<DeviceID, int> deviceBaudRates;      // 设备串口波特率映
 
 // 需要的设备
 struct DeviceNeed {
-    DeviceID id = DIVECE_ID_UNKNOW;
+    DeviceID id = DIVICE_ID_UNKNOW;
     // 是否强制需要
     bool required;
     // 是否当前有效
@@ -58,7 +59,7 @@ class DeviceManager : rclcpp::Node {
 
    private:
     // 需要的设备列表
-    std::vector<DeviceNeed> devicesNeed = {{DIVECE_ID_CARMASTER, false}, {DIVECE_ID_LIDAR, false}, {DIVECE_ID_IMU, false}};
+    std::vector<DeviceNeed> devicesNeed = {{DIVICE_ID_CARMASTER, false}, {DIVICE_ID_LIDAR, false}, {DIVICE_ID_LIDAR_IMU, false}, {DIVICE_ID_CAR_IMU, false}};
     // 设备列表
     std::vector<DeviceInfo> devices;
     // 扫描可用设备

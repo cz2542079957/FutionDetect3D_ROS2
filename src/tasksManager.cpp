@@ -17,13 +17,20 @@ void TasksManager::run(std::vector<DeviceInfo> devices) {
         Task *task = new Task();
         task->running = true;
         task->deviceInfo = devices[i];
-        tasks.push_back(task);
-        if (devices[i].id == DIVECE_ID_IMU) {
-            addImuTask(*task);
-        } else if (devices[i].id == DIVECE_ID_LIDAR) {
-            addLidarTask(*task);
-        } else if (devices[i].id == DIVECE_ID_CARMASTER) {
-            addRosMasterTask(*task);
+        tasks.push_back(task); 
+        switch (devices[i].id) {
+            case DIVICE_ID_LIDAR_IMU:
+                addLidarImuTask(*task);
+                break;
+            case DIVICE_ID_LIDAR:
+                addLidarTask(*task);
+                break;
+            case DIVICE_ID_CARMASTER:
+                addCarMasterTask(*task);
+                break;
+            case DIVICE_ID_CAR_IMU:
+                addCarImuTask(*task);
+                break;
         }
     }
     while (running) {
@@ -51,6 +58,15 @@ int TasksManager::getMode() { return mode; }
 
 void TasksManager::setMode(int val) { mode = val; }
 
+void TasksManager::addCarMasterTask(Task &task) {
+    task.workThread = std::thread([&]() {
+        RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "小车控制板线程[启动]");
+        auto carMasterNode = std::make_shared<CarMasterNode>();
+        carMasterNode->work(*this, task);
+        RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "小车控制板线程[退出]");
+    });
+}
+
 void TasksManager::addLidarTask(Task &task) {
     task.workThread = std::thread([&]() {
         RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "激光雷达线程[启动]");
@@ -64,21 +80,21 @@ void TasksManager::addLidarTask(Task &task) {
     // task.workThread.detach();
 }
 
-void TasksManager::addImuTask(Task &task) {
+void TasksManager::addLidarImuTask(Task &task) {
     task.workThread = std::thread([&]() {
-        RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "imu模块线程[启动]");
+        RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "lidarImu模块线程[启动]");
         auto imuNode = std::make_shared<LidarImuNode>();
         imuNode->work(*this, task);
-        RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "imu模块线程[退出]");
+        RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "lidarImu模块线程[退出]");
     });
     // task.workThread.detach();
 }
 
-void TasksManager::addRosMasterTask(Task &task) {
+void TasksManager::addCarImuTask(Task &task) {
     task.workThread = std::thread([&]() {
-        RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "小车控制板线程[启动]");
-        auto carMasterNode = std::make_shared<CarMasterNode>();
-        carMasterNode->work(*this, task);
-        RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "小车控制板线程[退出]");
+        RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "carImu模块线程[启动]");
+        auto imuNode = std::make_shared<CarImuNode>();
+        imuNode->work(*this, task);
+        RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "carImu模块线程[退出]");
     });
 }

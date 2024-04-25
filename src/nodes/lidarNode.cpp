@@ -85,12 +85,12 @@ int LidarNode::work(TasksManager& tm, Task& task) {
         lidarData->duration = duration;
         // RCLCPP_INFO(rclcpp::get_logger("LidarNode"), "个数：%d", count);
         for (int i = 0; i < count; i++) {
-            lidarData->data[i].timestemp = startTime.nanoseconds() + (i * timeInterval);
+            lidarData->data[i].timestamp = startTime.nanoseconds() + (i * timeInterval);
             lidarData->data[i].angle = getAngle(nodes[i]);
             lidarData->data[i].distance = nodes[i].dist_mm_q2 / 4000.f;
             // if (i % 100 == 0)
             //     RCLCPP_INFO(rclcpp::get_logger("LidarNode"), "第%d个点，距离：%.2f，角度：%.2f，时间：%ld", i, lidarData->data[i].distance,
-            //             lidarData->data[i].angle, lidarData->data[i].timestemp);
+            //             lidarData->data[i].angle, lidarData->data[i].timestamp);
         }
         publish(lidarData);
     }
