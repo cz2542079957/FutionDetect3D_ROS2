@@ -10,7 +10,7 @@
 #endif
 
 #include "unix.h"
-#include "serial/serial.h"
+#include "serial.h"
 
 using std::invalid_argument;
 using std::min;

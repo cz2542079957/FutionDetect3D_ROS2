@@ -5,7 +5,7 @@
 CarMasterNode::CarMasterNode() : Node("carMasterNode") {
     encoderDataPublisher = this->create_publisher<message::msg::CarEncoderData>(nodePrefix + "/encoderData", rclcpp::QoS(rclcpp::KeepLast(10)));
     servoDataPublisher = this->create_publisher<message::msg::CarServoData>(nodePrefix + "/servoData", rclcpp::QoS(rclcpp::KeepLast(10)));
-    votageDataPublisher = this->create_publisher<message::msg::CarVotageData>(nodePrefix + "/votageData", rclcpp::QoS(rclcpp::KeepLast(10)));
+    votageDataPublisher = this->create_publisher<message::msg::CarVotageData>(nodePrefix + "/voltageData", rclcpp::QoS(rclcpp::KeepLast(10)));
 
     modeControlSubscriber = this->create_subscription<message::msg::ModeControl>(nodePrefix + "/modeControl", rclcpp::QoS(rclcpp::KeepLast(10)),
                                                                                  std::bind(&CarMasterNode::modeControlCallback, this, std::placeholders::_1));
@@ -36,9 +36,6 @@ int CarMasterNode::work(TasksManager& tm, Task& task) {
             //     printf("%02X ", static_cast<int>(arr[i]));
             // }
             rawDataBuffer.insert(rawDataBuffer.end(), arr.begin(), arr.end());
-        }
-        // 解析数据
-        if (rawDataBuffer.size() > 0) {
             frameParser();
         }
         // 处理和发送控制指令
@@ -185,7 +182,7 @@ void CarMasterNode::motionHandler() {
 
     // 发送数据
     if (lastState != state || lastSpeed != speed) {
-        RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "模式：%d, 状态: %d, 速度：%d", mode, state, speed);
+        // RCLCPP_INFO(rclcpp::get_logger("CarMasterNode"), "模式：%d, 状态: %d, 速度：%d", mode, state, speed);
         send(std::vector<uint8_t>{FRAME_FUNC_MOTION, state, speed});
     }
     lastMode = mode, lastState = state, lastSpeed = speed;
