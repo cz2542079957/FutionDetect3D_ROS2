@@ -95,10 +95,10 @@ void CarImuNode::rawDataHandler(std::vector<uint8_t> arr, int count) {
                 }
                 case 0x53: {
                     // 角度
-                    dataFrame.angular.roll = (short)((short)(rawDataBuffer[i + 3] << 8) | rawDataBuffer[i + 2]) * angularCoe;
+                    dataFrame.angular.yaw = (short)((short)(rawDataBuffer[i + 3] << 8) | rawDataBuffer[i + 2]) * angularCoe;
                     dataFrame.angular.pitch = (short)((short)(rawDataBuffer[i + 5] << 8) | rawDataBuffer[i + 4]) * angularCoe;
-                    dataFrame.angular.yaw = (short)((short)(rawDataBuffer[i + 7] << 8) | rawDataBuffer[i + 6]) * angularCoe;
-                    // printf("角度 x:%lf y:%lf z:%lf\n", dataFrame.angular.roll, dataFrame.angular.pitch, dataFrame.angular.yaw);
+                    dataFrame.angular.roll = (short)((short)(rawDataBuffer[i + 7] << 8) | rawDataBuffer[i + 6]) * angularCoe;
+                    // printf("角度 x:%lf y:%lf z:%lf\n", dataFrame.angular.yaw, dataFrame.angular.pitch, dataFrame.angular.roll);
                     handledData->data.push_back(dataFrame);
                     // handledData->data.push_back(dataFrame);
                     break;
@@ -132,7 +132,7 @@ void CarImuNode::rawDataHandler(std::vector<uint8_t> arr, int count) {
         break;
     }
     // RCLCPP_INFO(rclcpp::get_logger("CarImuNode"), " %u", publisher);
-    // publish(handledData);
+    publish(handledData);
     rawDataBuffer.erase(rawDataBuffer.begin(), rawDataBuffer.begin() + i);
 }
 
