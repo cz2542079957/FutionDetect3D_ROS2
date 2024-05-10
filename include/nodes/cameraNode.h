@@ -4,6 +4,7 @@
 #include <opencv2/highgui.hpp>
 #include <sensor_msgs/msg/image.hpp>
 
+#include "message/msg/mode_control.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 class TasksManager;
@@ -20,9 +21,17 @@ class CameraNode : public rclcpp::Node {
     // 话题节点前缀
     std::string nodePrefix = "/cameraNode";
     // 是否请求拍照
-    bool needTakePhoto = true;
+    bool needTakePhoto = false;
     // 发布者
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr publisher;
 
-    // void publish(message::msg::ImuData::SharedPtr& imuData);
+    std::thread executorThread;
+    std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> executor;
+    // 接收控制
+    rclcpp::Subscription<message::msg::ModeControl>::SharedPtr subscriber;
+
+    void cameraControlCallback(const message::msg::ModeControl::SharedPtr msg);
+
+    void start();
+    void end();
 };
