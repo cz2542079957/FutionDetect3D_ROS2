@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 project(fusion_detect_3d)
-
+set(EXECUTABLE_NAME main)
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -11,8 +11,10 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED) 
+find_package(cv_bridge REQUIRED)
 find_package(std_msgs REQUIRED)   
 find_package(message REQUIRED) 
+find_package(OpenCV REQUIRED)
 
 # 雷达sdk
 set(SLLIDAR_SDK_PATH "./lib/lidarSdk") 
@@ -28,9 +30,7 @@ set(SERIAL_LIB_PATH "./lib/serial")
 FILE(GLOB SERIAL_LIB_SRC
   "${SERIAL_LIB_PATH}/src/*.cc" 
   "${SERIAL_LIB_PATH}/src/list_ports/*.cc"
-)
- 
-
+)     
 
 include_directories(
   ${SLLIDAR_SDK_PATH}/include 
@@ -38,13 +38,14 @@ include_directories(
   ${SERIAL_LIB_PATH}/include 
   ${SERIAL_LIB_PATH}/src 
   ${Boost_INCLUDE_DIRS} 
+  ${OpenCV_INCLUDE_DIRS}
   ./src
   ./src/nodes 
   ./lib
   ./include
   ./include/nodes 
 )
- 
+
 # 项目文件
 FILE(GLOB SOURCES 
   "./include/nodes/*.h"
@@ -55,15 +56,18 @@ FILE(GLOB SOURCES
 )
 
 # 创建可执行文件并链接所需依赖
-add_executable(main ${SOURCES} ${SLLIDAR_SDK_SRC} ${SERIAL_LIB_SRC} ) 
+add_executable(${EXECUTABLE_NAME} ${SOURCES} ${SLLIDAR_SDK_SRC} ${SERIAL_LIB_SRC} ) 
 ament_target_dependencies(
-  main
+  ${EXECUTABLE_NAME}
+  cv_bridge
   rclcpp
   std_msgs  
   message  
 )
 
+target_link_libraries(${EXECUTABLE_NAME}  ${OpenCV_LIBS})
+
 # 安装目标到指定位置
-install(TARGETS main DESTINATION lib/${PROJECT_NAME})
-target_compile_options(main PRIVATE "-w")  # 禁用警告
+install(TARGETS ${EXECUTABLE_NAME} DESTINATION lib/${PROJECT_NAME})
+target_compile_options(${EXECUTABLE_NAME} PRIVATE "-w")  # 禁用警告
 ament_package()

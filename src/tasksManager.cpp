@@ -17,7 +17,7 @@ void TasksManager::run(std::vector<DeviceInfo> devices) {
         Task *task = new Task();
         task->running = true;
         task->deviceInfo = devices[i];
-        tasks.push_back(task); 
+        tasks.push_back(task);
         switch (devices[i].id) {
             case DIVICE_ID_LIDAR_IMU:
                 addLidarImuTask(*task);
@@ -30,6 +30,9 @@ void TasksManager::run(std::vector<DeviceInfo> devices) {
                 break;
             case DIVICE_ID_CAR_IMU:
                 addCarImuTask(*task);
+                break;
+            case DIVICE_ID_CAMERA:
+                addCameraTask(*task);
                 break;
         }
     }
@@ -96,5 +99,14 @@ void TasksManager::addCarImuTask(Task &task) {
         auto imuNode = std::make_shared<CarImuNode>();
         imuNode->work(*this, task);
         RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "carImu模块线程[退出]");
+    });
+}
+
+void TasksManager::addCameraTask(Task &task) {
+    task.workThread = std::thread([&]() {
+        RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "camera模块线程[启动]");
+        auto cameraNode = std::make_shared<CameraNode>();
+        cameraNode->work(*this, task);
+        RCLCPP_INFO(rclcpp::get_logger("TasksManager"), "camera模块线程[退出]");
     });
 }

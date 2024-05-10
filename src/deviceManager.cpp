@@ -7,20 +7,17 @@ DeviceManager::~DeviceManager() {}
 
 std::map<DeviceID, std::string> deviceNodes = {
     {DIVICE_ID_CARMASTER, "/dev/car-master"}, {DIVICE_ID_LIDAR, "/dev/rplidar"}, {DIVICE_ID_LIDAR_IMU, "/dev/lidar-imu"},
-    {DIVICE_ID_CAR_IMU, "/dev/car-imu"},      {DIVICE_ID_UNKNOW, "/dev"},
+    {DIVICE_ID_CAR_IMU, "/dev/car-imu"},      {DIVICE_ID_CAMERA, "/dev/camera"}, {DIVICE_ID_UNKNOW, "/dev"},
 };
 
 std::map<DeviceID, std::string> deviceNames = {
-    {DIVICE_ID_CARMASTER, "小车控制板"},     {DIVICE_ID_LIDAR, "激光雷达"},  {DIVICE_ID_LIDAR_IMU, "雷达惯性导航模块"},
-    {DIVICE_ID_CAR_IMU, "小车惯性导航模块"}, {DIVICE_ID_UNKNOW, "未知设备"},
+    {DIVICE_ID_CARMASTER, "小车控制板"},     {DIVICE_ID_LIDAR, "激光雷达"}, {DIVICE_ID_LIDAR_IMU, "雷达惯性导航模块"},
+    {DIVICE_ID_CAR_IMU, "小车惯性导航模块"}, {DIVICE_ID_CAMERA, "相机"},    {DIVICE_ID_UNKNOW, "未知设备"},
 };
 
 std::map<DeviceID, int> deviceBaudRates = {
-    {DIVICE_ID_CARMASTER, 115200},
-    {DIVICE_ID_LIDAR, 1000000},
-    {DIVICE_ID_LIDAR_IMU, 230400},
-    {DIVICE_ID_CAR_IMU, 230400},
-    {DIVICE_ID_UNKNOW, 0},
+    {DIVICE_ID_CARMASTER, 115200}, {DIVICE_ID_LIDAR, 1000000}, {DIVICE_ID_LIDAR_IMU, 230400},
+    {DIVICE_ID_CAR_IMU, 230400},   {DIVICE_ID_CAMERA, 0},      {DIVICE_ID_UNKNOW, 0},
 };
 
 int DeviceManager::matchDevices() {

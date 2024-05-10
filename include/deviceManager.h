@@ -17,6 +17,7 @@ enum DeviceID {
     DIVICE_ID_LIDAR,
     DIVICE_ID_LIDAR_IMU,
     DIVICE_ID_CAR_IMU,
+    DIVICE_ID_CAMERA,
     DIVICE_COUNT,
     DIVICE_ID_UNKNOW,
 };
@@ -59,7 +60,8 @@ class DeviceManager : rclcpp::Node {
 
    private:
     // 需要的设备列表
-    std::vector<DeviceNeed> devicesNeed = {{DIVICE_ID_CARMASTER, false}, {DIVICE_ID_LIDAR, false}, {DIVICE_ID_LIDAR_IMU, false}, {DIVICE_ID_CAR_IMU, false}};
+    std::vector<DeviceNeed> devicesNeed = {
+        {DIVICE_ID_CARMASTER, false}, {DIVICE_ID_LIDAR, false}, {DIVICE_ID_LIDAR_IMU, false}, {DIVICE_ID_CAR_IMU, false}, {DIVICE_ID_CAMERA, false}};
     // 设备列表
     std::vector<DeviceInfo> devices;
     // 扫描可用设备
